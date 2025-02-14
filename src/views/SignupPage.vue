@@ -1,10 +1,10 @@
 <template>
   <ion-page>
     <ion-content :fullscreen="true" class="ion-padding">
-      <img src="@/assets/iberisLogo.png" alt="iberisLogo" class="logo" />
+ <a href="/home">     <img src="@/assets/iberisLogo.png" alt="iberisLogo" class="logo" /></a>
       <div class="signup-container">
         <h1>Welcome to the family !</h1>
-        <p>You already have an account? <a href="#">Log in</a></p>
+        <p>You already have an account? <a href="/login">Log in</a></p>
 
         <div class="socialButtons">
           <ion-button expand="block" fill="outline" class="socialBtn">

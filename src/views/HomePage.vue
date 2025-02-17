@@ -8,7 +8,7 @@
         <div class="content-wrapper">
           <div class="image-container">
             <img 
-              src="/src/images/logo-iberis.png" 
+              src="@/assets/logo-iberis.png" 
               alt="Iberis Logo"
               class="logo"
             >
@@ -22,7 +22,7 @@
           </p>
 
           <div class="button-group">
-            <ion-button class="action-button">Sign Up</ion-button>
+            <ion-button class="action-button" @click="goToSignup">Sign Up</ion-button>
             <ion-button class="action-button" @click="goToLogin">Log In</ion-button>
           </div>
         </div>
@@ -39,6 +39,9 @@ import { useRouter } from 'vue-router';
 const router = useRouter(); 
 const goToLogin = () => {
   router.push('/login'); 
+};
+const goToSignup = () => {
+  router.push('/signup'); 
 };
 </script>
 

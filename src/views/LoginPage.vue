@@ -7,7 +7,7 @@
           <div class="content-wrapper">
             <div class="image-container">
               <img 
-                src="/src/images/logo-iberis.png" 
+                src="@/assets/logo-iberis.png" 
                 alt="Iberis Logo"
                 class="logo"
               >
@@ -19,12 +19,12 @@
   
             <ion-list class="list">
               <ion-item class="item">
-                <ion-img src="/src/images/email.png" class="input-icon"></ion-img>
+                <ion-img src="@/assets/email.png" class="input-icon"></ion-img>
                 <ion-input type="email" placeholder="Email" class="input-field"></ion-input>
               </ion-item>
   
               <ion-item class="item">
-                <ion-img src="/src/images/cadenas.png" class="input-icon"></ion-img>
+                <ion-img src="@/assets/cadenas.png" class="input-icon"></ion-img>
                 <ion-input type="password" placeholder="Password" class="input-field"></ion-input>
               </ion-item>
             </ion-list>

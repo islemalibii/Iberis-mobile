@@ -1,7 +1,7 @@
 <template>
   <ion-page>
     <ion-content :fullscreen="true" class="ion-padding">
- <a href="/home">     <img src="@/assets/iberisLogo.png" alt="iberisLogo" class="logo" /></a>
+ <a href="/home">     <img src="@/assets/logo-iberis.png" alt="iberisLogo" class="logo" /></a>
       <div class="signup-container">
         <h1>Welcome to the family !</h1>
         <p>You already have an account? <a href="/login">Log in</a></p>
@@ -19,29 +19,80 @@
 
         <ion-list class="list">
           <ion-item class="item">
-            <ion-input placeholder="Fullname"></ion-input>
+            <ion-input :value="fullname" @ionInput="fullname = $event.target.value" placeholder="Fullname"></ion-input>
           </ion-item>
           <ion-item class="item">
-            <ion-input type="email" placeholder="Email"></ion-input>
+            <ion-input :value="email" @ionInput="email = $event.target.value" type="email" placeholder="Email"></ion-input>
           </ion-item>
           <ion-item class="item">
-            <ion-input type="password" placeholder="Password"></ion-input>
+            <ion-input :value="password" @ionInput="password = $event.target.value" type="password" placeholder="Password" clearInput="true"></ion-input>
           </ion-item>
         </ion-list>
 
 
         <div class="checkboxContainer">
-          <ion-checkbox></ion-checkbox>
-          <p class="conditions">By signing up, you accept the <a href="#">Utilisation Conditions</a></p>
+          <ion-checkbox :checked="acceptTerms" @ionChange="acceptTerms = $event.detail.checked"></ion-checkbox>
+          <p class="conditions" >By signing up, you accept the <a href="#">Utilisation Conditions</a></p>
         </div>
 
         <div class="buttonContainer">
-          <ion-button expand="block" class="signupBtn">Sign up</ion-button>
+          <ion-button expand="block" @click="Signup" class="signupBtn">Sign up</ion-button>
         </div>
       </div>
     </ion-content>
   </ion-page>
   </template>
+
+
+<script setup>
+    import { ref } from 'vue';
+    import { signup } from '@/services/authentification';
+
+    const fullname = ref('');
+    const email = ref('');
+    const password = ref('');
+    const acceptTerms = ref(false);
+
+
+
+    const Signup = async () => {
+
+        console.log('Fullname:', fullname.value);
+        console.log('Email:', email.value);
+        console.log('Password:', password.value);
+        console.log('Accept Terms:', acceptTerms.value);
+
+        if (!fullname.value || !email.value || !password.value) {
+        console.error('Please fill in all fields');
+        return;
+    }
+
+        if (!acceptTerms.value) {
+            console.error('You must accept the terms and conditions');
+            return;
+        }
+
+
+        const userData = {
+        name: fullname.value,
+        email: email.value,
+        password: password.value,
+    };
+
+    try {
+        const response = await signup(userData);
+        console.log('Signup successful:', response.data);
+    } catch (error) {
+        console.error('Signup failed:', error);
+    }
+};
+
+
+
+</script>
+
+
+
 
 <style scoped>
 .ion-padding{

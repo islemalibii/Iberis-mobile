@@ -4,6 +4,7 @@
   
     </ion-header>
     <ion-content :fullscreen="true">
+      
       <div class="container">
         <div class="content-wrapper">
           <div class="image-container">

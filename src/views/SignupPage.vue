@@ -1,21 +1,22 @@
 <template>
   <ion-page>
     <ion-content :fullscreen="true" class="ion-padding">
- <a href="/home">     <img src="@/assets/logo-iberis.png" alt="iberisLogo" class="logo" /></a>
-      <div class="signup-container">
-        <h1>Welcome to the family !</h1>
-        <p>You already have an account? <a href="/login">Log in</a></p>
+    <a href="/home">     
+      <img src="@/assets/logo-iberis.png" alt="iberisLogo" class="logo" />
+    </a>
+    <div class="signup-container">
+      <h1>Welcome to the family !</h1>
+      <p>You already have an account? <a href="/login">Log in</a></p>
 
-        <div class="socialButtons">
-          <ion-button expand="block" fill="outline" class="socialBtn">
-            <ion-icon slot="start" name="logo-google"></ion-icon> Google
-          </ion-button>
-          <ion-button expand="block" fill="outline" class="socialBtn">
-            <ion-icon slot="start" name="logo-facebook"></ion-icon> Facebook
-          </ion-button>
-        </div>
-
-  <p class="or">Or</p>
+      <div class="socialButtons">
+        <ion-button expand="block" fill="outline" class="socialBtn" @click="GoogleSignup">
+          <ion-icon slot="start" name="logo-google"></ion-icon> Google
+        </ion-button>
+        <ion-button expand="block" fill="outline" class="socialBtn">
+          <ion-icon slot="start" name="logo-facebook"></ion-icon> Facebook
+        </ion-button>
+      </div>
+      <p class="or">Or</p>
 
         <ion-list class="list">
           <ion-item class="item">
@@ -45,7 +46,7 @@
 
 
 <script setup>
-    import { ref } from 'vue';
+    import { ref, onMounted } from 'vue';
     import { signup } from '@/services/authentification';
 
     const fullname = ref('');
@@ -57,15 +58,10 @@
 
     const Signup = async () => {
 
-        console.log('Fullname:', fullname.value);
-        console.log('Email:', email.value);
-        console.log('Password:', password.value);
-        console.log('Accept Terms:', acceptTerms.value);
-
         if (!fullname.value || !email.value || !password.value) {
         console.error('Please fill in all fields');
         return;
-    }
+        }
 
         if (!acceptTerms.value) {
             console.error('You must accept the terms and conditions');
@@ -74,18 +70,48 @@
 
 
         const userData = {
-        name: fullname.value,
-        email: email.value,
-        password: password.value,
+            name: fullname.value,
+            email: email.value,
+            password: password.value,
+        };
+
+        try {
+            const response = await signup(userData);
+            console.log('Signup successful:', response.data);
+        } catch (error) {
+            console.error('Signup failed:', error);
+        }
     };
 
-    try {
-        const response = await signup(userData);
-        console.log('Signup successful:', response.data);
-    } catch (error) {
-        console.error('Signup failed:', error);
-    }
-};
+    const handleGoogleSignUp = (response) => {
+        console.log('Google Sign-In Response:', response);
+        const idToken = response.credential;
+        console.log('Google ID Token:', idToken);
+  
+  
+        fetch('https://preprod-api.iberis.io/ar/api/private/user/google-signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken })
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log('Server response:', data);
+        })
+        .catch(err => console.error('Error:', err));
+    };
+
+    const GoogleSignup = () => {
+      window.google.accounts.id.prompt(); 
+    };
+
+    onMounted(() => {
+        window.google.accounts.id.initialize({
+            client_id: '543531980890-o7btiuq1iod2423htc4c3av4i6l4j28h.apps.googleusercontent.com',
+            callback: handleGoogleSignUp,
+        });
+    }); 
+
 
 
 

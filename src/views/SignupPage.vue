@@ -9,9 +9,11 @@
       <p>You already have an account? <a href="/login">Log in</a></p>
 
       <div class="socialButtons">
-        <ion-button expand="block" fill="outline" class="socialBtn" @click="GoogleSignup">
-          <ion-icon slot="start" name="logo-google"></ion-icon> Google
-        </ion-button>
+
+        <div class="google-button-container">
+          <div id="google-button"></div>
+        </div>
+
         <ion-button expand="block" fill="outline" class="socialBtn">
           <ion-icon slot="start" name="logo-facebook"></ion-icon> Facebook
         </ion-button>
@@ -46,75 +48,74 @@
 
 
 <script setup>
-    import { ref, onMounted } from 'vue';
-    import { signup } from '@/services/authentification';
+  import { ref, onMounted } from "vue";
+  import { signup } from "@/services/authentification";
 
-    const fullname = ref('');
-    const email = ref('');
-    const password = ref('');
-    const acceptTerms = ref(false);
+  const fullname = ref("");
+  const email = ref("");
+  const password = ref("");
+  const acceptTerms = ref(false);
 
+  const Signup = async () => {
+    if (!fullname.value || !email.value || !password.value) {
+      console.error("Please fill in all fields");
+      return;
+    }
+    if (!acceptTerms.value) {
+      console.error("You must accept the terms and conditions");
+      return;
+    }
 
+    try {
+      const response = await signup({
+        name: fullname.value,
+        email: email.value,
+        password: password.value,
+      });
+      console.log("Signup successful:", response.data);
+    } catch (error) {
+      console.error("Signup failed:", error);
+    }
+  };
 
-    const Signup = async () => {
+  const handleGoogleSignUp = (response) => {
+    console.log("Google Sign-In Response:", response);
+    const idToken = response.credential;
 
-        if (!fullname.value || !email.value || !password.value) {
-        console.error('Please fill in all fields');
-        return;
-        }
+    fetch("https://preprod-api.iberis.io/ar/api/private/user/google-signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+    })
+      .then((res) => res.json())
+      .then((data) => console.log("Server response:", data))
+      .catch((err) => console.error("Error:", err));
+  };
 
-        if (!acceptTerms.value) {
-            console.error('You must accept the terms and conditions');
-            return;
-        }
-
-
-        const userData = {
-            name: fullname.value,
-            email: email.value,
-            password: password.value,
-        };
-
-        try {
-            const response = await signup(userData);
-            console.log('Signup successful:', response.data);
-        } catch (error) {
-            console.error('Signup failed:', error);
-        }
-    };
-
-    const handleGoogleSignUp = (response) => {
-        console.log('Google Sign-In Response:', response);
-        const idToken = response.credential;
-        console.log('Google ID Token:', idToken);
-  
-  
-        fetch('https://preprod-api.iberis.io/ar/api/private/user/google-signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken })
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log('Server response:', data);
-        })
-        .catch(err => console.error('Error:', err));
-    };
-
-    const GoogleSignup = () => {
-      window.google.accounts.id.prompt(); 
-    };
-
-    onMounted(() => {
-        window.google.accounts.id.initialize({
-            client_id: '543531980890-o7btiuq1iod2423htc4c3av4i6l4j28h.apps.googleusercontent.com',
-            callback: handleGoogleSignUp,
+  onMounted(() => {
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.onload = () => {
+      if (!document.getElementById("google-button").hasChildNodes()) { 
+        window.google?.accounts.id.initialize({
+          client_id: "543531980890-o7btiuq1iod2423htc4c3av4i6l4j28h.apps.googleusercontent.com",
+          callback: handleGoogleSignUp,
+          ux_mode: "popup",
         });
-    }); 
 
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-button"),
+          { theme: "outline", size: "large", width: "150" }
+        );
+      }
+    };
+    document.head.appendChild(script);
+  });
 
-
-
+  const GoogleSignup = () => {
+    window.google.accounts.id.prompt();
+  };
 </script>
 
 
@@ -191,6 +192,13 @@ p {
   color: #47463D;
 }
 
+
+
+#google-button {
+  display: flex;
+  justify-content: center;
+
+}
 
 .buttonContainer {
   margin-top:50px;

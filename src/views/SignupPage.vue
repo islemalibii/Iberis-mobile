@@ -10,8 +10,8 @@
 
       <div class="socialButtons">
 
-        <div class="google-button-container">
-          <div id="google-button"></div>
+        <div class="googleButton-container">
+          <div id="google-button" class="socialBtn"></div>
         </div>
 
         <ion-button expand="block" fill="outline" class="socialBtn">
@@ -93,24 +93,18 @@
   };
 
   onMounted(() => {
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.onload = () => {
-      if (!document.getElementById("google-button").hasChildNodes()) { 
-        window.google?.accounts.id.initialize({
-          client_id: "543531980890-o7btiuq1iod2423htc4c3av4i6l4j28h.apps.googleusercontent.com",
-          callback: handleGoogleSignUp,
-          ux_mode: "popup",
-        });
+    if (window.google?.accounts) {
+      window.google.accounts.id.initialize({
+        client_id: "543531980890-o7btiuq1iod2423htc4c3av4i6l4j28h.apps.googleusercontent.com",
+        callback: handleGoogleSignUp,
+        ux_mode: "popup",
+      });
 
-        window.google.accounts.id.renderButton(
-          document.getElementById("google-button"),
-          { theme: "outline", size: "large", width: "150" }
-        );
-      }
-    };
-    document.head.appendChild(script);
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-button"),
+        { theme: "outline", size: "large", width: "90" }
+      );
+    }
   });
 
   const GoogleSignup = () => {
@@ -159,8 +153,30 @@ p {
   text-transform: none;
   color: #47463D;
   --border-color: #47463D;
+  --border-width: 2px; 
   --border-radius: 10px; 
 }
+
+.googleButton-container{
+  border: 1px solid black;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  width: 190px; 
+  overflow: hidden;
+}
+
+#google-button {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
 
 .or {
   margin: 10px 0;
@@ -193,12 +209,6 @@ p {
 }
 
 
-
-#google-button {
-  display: flex;
-  justify-content: center;
-
-}
 
 .buttonContainer {
   margin-top:50px;

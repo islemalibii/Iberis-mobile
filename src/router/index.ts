@@ -3,6 +3,8 @@ import { RouteRecordRaw } from 'vue-router';
 import HomePage from '../views/HomePage.vue'
 import LoginPage from '@/views/LoginPage.vue';
 import SignupPage from '@/views/SignupPage.vue';
+import VerificationPage from '@/views/VerificationPage.vue';
+
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
@@ -20,6 +22,10 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/signup',
     component: SignupPage
+  },
+  {
+  path: '/verif',
+  component: VerificationPage
   },
 ]
 

@@ -79,6 +79,7 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router"; 
 import { signup } from "@/services/authentification";
+import { nextTick } from "vue";
 
 const fullname = ref("");
 const email = ref("");
@@ -104,7 +105,6 @@ const checkConditions = (socialSignup = false) => {
 
 
 const Signup = async () => {
-  console.log("Signup function triggered");
   if (!checkConditions()) return;
 
   try {
@@ -114,8 +114,14 @@ const Signup = async () => {
       password: password.value,
     });
     console.log("Signup successful:", response.data);
-    errorMessage.value = "Signup successful!";
-    router.push('/login');  
+
+    if (response && response.data) {  
+      console.log("Navigating to /verify...");
+      router.push('/verify'); 
+    } else {
+      throw new Error("Invalid API response");
+    }
+
   } catch (error) {
     console.error("Signup failed:", error);
     errorMessage.value = "Signup failed: " + error.message;
@@ -134,27 +140,19 @@ const handleGoogleSignUp = (response) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken }),
   })
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error("HTTP error " + res.status); 
-      }
-      return res.text(); 
-    })
-    .then((text) => {
-      console.log("Raw response from server:", text); 
-      try {
-        const data = JSON.parse(text); 
-        console.log("Parsed server response:", data);
-        errorMessage.value = "Signup successful!";
-        router.push("/home");
-      } catch (e) {
-        console.error("Error parsing JSON:", e);
-        errorMessage.value = "Signup failed: Invalid JSON response.";
-      }
-    })
-    .catch((err) => {
-      console.error("Error:", err);
-      errorMessage.value = "Signup failed: " + err.message;
+  .then(response => response.text()) // Log as text first
+  .then(text => {
+    console.log("Raw response from server:", text); // Check if it's HTML or JSON
+    return JSON.parse(text); 
+  })
+  .then(data => {
+    console.log("Parsed Data:", data);
+    errorMessage.value = "Signup successful!";
+    router.push("/home");
+  })
+  .catch(error => {
+    console.error("Error parsing JSON:", error);
+    errorMessage.value = "Signup failed: " + error.message;
     });
 };
 
@@ -175,15 +173,23 @@ const handleFacebookLogin = (response) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ accessToken }),
     })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Server response:", data);
-        errorMessage.value = "Signup successful!";
-        router.push("/home"); 
+    .then(response => response.text()) // Log as text first
+      .then(text => {
+        console.log("Raw response from server:", text);
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          throw new Error("Invalid JSON response");
+        }
       })
-      .catch((err) => {
-        console.error("Error:", err);
-        errorMessage.value = "Signup failed: " + err.message;
+      .then(data => {
+        console.log("Parsed Data:", data);
+        errorMessage.value = "Signup successful!";
+        router.push("/home");
+      })
+      .catch(error => {
+        console.error("Error parsing JSON:", error);
+        errorMessage.value = "Signup failed: " + error.message;
       });
   } else {
     console.error("Facebook login failed", response);
@@ -206,7 +212,7 @@ onMounted(() => {
 
       window.google.accounts.id.renderButton(
         document.getElementById("google-button"),
-        { theme: "outline", size: "large", width: "150" }
+        { theme: "outline", size: "large", width: "220" }
       );
     }
   };
@@ -235,6 +241,7 @@ onMounted(() => {
   };
   document.head.appendChild(facebookScript);
 });
+
 </script>
 
 <style scoped>
@@ -260,13 +267,39 @@ p {
   font-size: 15px;
   color: #47463d;
 }
+
+
 .socialButtons {
   display: flex;
-  gap: 15px;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 15px; 
   margin-bottom: 20px;
   margin-top: 30px;
+  width: 100%;
 }
+
+#facebook-button , #facebook-button{ 
+  width: 250px; 
+  height: 50px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+
+}
+.google-button-container, .facebook-button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+.fb-login-button {
+  transform: scale(0.95); 
+  width: 100%;
+}
+
 
 .or {
   margin: 10px 0;
@@ -309,9 +342,6 @@ p {
   height: 35px;
   width: 150px;
 }
-.facebook-button-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 0px;
-}
+
+
 </style>

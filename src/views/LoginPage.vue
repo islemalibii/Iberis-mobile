@@ -182,7 +182,7 @@ onMounted(() => {
 
       window.google.accounts.id.renderButton(
         document.getElementById("google-button"),
-        { theme: "outline", size: "large", width: "150" }
+        { theme: "outline", size: "large", width: "220" }
       );
     }
   };
@@ -303,13 +303,38 @@ ion-content {
   margin-top: 10px;
 }
 
+
 .socialButtons {
   display: flex;
-  gap: 15px;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 15px; 
   margin-bottom: 20px;
   margin-top: 30px;
+  width: 100%;
 }
+
+#facebook-button , #facebook-button{ 
+  width: 250px; 
+  height: 50px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+
+}
+.google-button-container, .facebook-button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+.fb-login-button {
+  transform: scale(0.95); 
+  width: 100%;
+}
+
 
 .or {
   margin: 10px 0;

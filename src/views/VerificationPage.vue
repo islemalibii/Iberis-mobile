@@ -36,6 +36,17 @@
     const code = ref(["", "", "", ""]);
 
     const isCodeComplete = computed(() => code.value.every((digit) => digit !== ""));
+      const moveToNext = (index) => {
+    if (code.value[index] && index < code.value.length - 1) {
+      inputs.value[index + 1].focus();
+    }
+  };
+
+    const moveToPrev = (index) => {
+      if (!code.value[index] && index > 0) {
+        inputs.value[index - 1].focus();
+      }
+    };
 
     const submitCode = () => alert("Submitting Code: " + code.value.join(""));
     const resendCode = () => alert("Resending Code...");

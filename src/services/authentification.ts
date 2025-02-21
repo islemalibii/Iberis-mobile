@@ -18,3 +18,10 @@ export const login = async (credentials: any) => {
   return api.post('/login', credentials);
 };
 
+export const sendVerificationEmail = async (email: string) => {
+  return api.post('/', { email });
+};
+
+export const verifyCode = async (email: string, code: string) => {
+  return api.post('/', { email, code });
+};

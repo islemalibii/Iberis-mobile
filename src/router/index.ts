@@ -24,7 +24,7 @@ const routes: Array<RouteRecordRaw> = [
     component: SignupPage
   },
   {
-  path: '/verif',
+  path: '/verify',
   component: VerificationPage
   },
 ]

@@ -11,7 +11,7 @@ const api = axios.create({
 
 
 export const signup = async (userData: any) => {
-  return api.post('/signup', userData);
+  return api.post('/register', userData);
 };
 
 export const login = async (credentials: any) => {
@@ -24,4 +24,7 @@ export const sendVerificationEmail = async (email: string) => {
 
 export const verifyCode = async (email: string, code: string) => {
   return api.post('/', { email, code });
+};
+export const sendResetCode = (data: { email: string }) => {
+  return axios.post('/reset', data); 
 };

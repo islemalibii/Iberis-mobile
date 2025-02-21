@@ -124,18 +124,29 @@ const Signup = async () => {
 
   } catch (error) {
     console.error("Signup failed:", error);
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+      console.error("Response headers:", error.response.headers);
+    } else {
+      console.error("Error message:", error.message);
+    }
     errorMessage.value = "Signup failed: " + error.message;
   }
 };
 
+
 const handleGoogleSignUp = (response) => {
   console.log("Google Sign-In Response:", response);
 
-  if (!checkConditions(true)) return; 
+  if (!acceptTerms.value) {
+    errorMessage.value = "You must accept the terms and conditions";
+    return;
+  }
 
   const idToken = response.credential;
 
-  fetch("https://preprod-api.iberis.io/ar/api/private/user/google-signup", {
+  fetch("https://preprod-api.iberis.io/ar/api/private/user/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken }),
@@ -160,6 +171,7 @@ const handleGoogleSignUp = (response) => {
 
 
 
+
 const handleFacebookLogin = (response) => {
   if (response.status === "connected") {
     console.log("Facebook Sign-In Response:", response);
@@ -167,8 +179,9 @@ const handleFacebookLogin = (response) => {
     if (!checkConditions(true)) return; 
 
     const { accessToken } = response.authResponse;
+ 
 
-    fetch("https://preprod-api.iberis.io/ar/api/private/user/facebook-signup", {
+    fetch("https://preprod-api.iberis.io/ar/api/private/user/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ accessToken }),

@@ -59,7 +59,9 @@
             <p v-if="passwordError" class="error">{{ passwordError }}</p>
           </ion-list>
 
-          <p class="forgot-password"><a href="#">Forgot your password?</a></p>
+          <p class="forgot-password">
+  <router-link to="/forgetPassword">Forgot your password?</router-link>
+</p>
 
           <ion-button expand="full" class="login-button" @click="handleLogin">
             Log In
@@ -105,6 +107,8 @@ const handleLogin = async () => {
 
   try {
     const response = await login({ email: trimmedEmail, password: trimmedPassword });
+    
+    console.log(response.data);
 
     if (response.data.userExists) {
       localStorage.setItem('token', response.data.token);  
@@ -119,6 +123,7 @@ const handleLogin = async () => {
     errorMessage.value = 'Invalid credentials. Please try again.';
   }
 };
+
 
 
 const handleGoogleSignUp = (response: any) => {
@@ -193,7 +198,7 @@ onMounted(() => {
   facebookScript.async = true;
   facebookScript.onload = () => {
     window.FB.init({
-      appId: "507777845320852",
+      appId:"507777845320852",
       cookie: true,
       xfbml: true,
       version: "v15.0"

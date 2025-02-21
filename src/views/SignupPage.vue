@@ -118,45 +118,47 @@ const Signup = async () => {
     router.push('/login');  
   } catch (error) {
     console.error("Signup failed:", error);
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+      console.error("Response headers:", error.response.headers);
+    } else {
+      console.error("Error message:", error.message);
+    }
     errorMessage.value = "Signup failed: " + error.message;
   }
 };
 
+
 const handleGoogleSignUp = (response) => {
   console.log("Google Sign-In Response:", response);
 
-  if (!checkConditions(true)) return; 
+  if (!acceptTerms.value) {
+    errorMessage.value = "You must accept the terms and conditions";
+    return;
+  }
 
   const idToken = response.credential;
 
-  fetch("https://preprod-api.iberis.io/ar/api/private/user/google-signup", {
+  fetch("https://preprod-api.iberis.io/ar/api/private/user/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken }),
   })
     .then((res) => {
-      if (!res.ok) {
-        throw new Error("HTTP error " + res.status); 
-      }
-      return res.text(); 
+      if (!res.ok) throw new Error("HTTP error " + res.status);
+      return res.json();
     })
-    .then((text) => {
-      console.log("Raw response from server:", text); 
-      try {
-        const data = JSON.parse(text); 
-        console.log("Parsed server response:", data);
-        errorMessage.value = "Signup successful!";
-        router.push("/home");
-      } catch (e) {
-        console.error("Error parsing JSON:", e);
-        errorMessage.value = "Signup failed: Invalid JSON response.";
-      }
+    .then((data) => {
+      console.log("Signup success:", data);
+      router.push("/home");
     })
     .catch((err) => {
-      console.error("Error:", err);
+      console.error("Signup failed:", err);
       errorMessage.value = "Signup failed: " + err.message;
     });
 };
+
 
 
 
@@ -169,8 +171,9 @@ const handleFacebookLogin = (response) => {
     if (!checkConditions(true)) return; 
 
     const { accessToken } = response.authResponse;
+ 
 
-    fetch("https://preprod-api.iberis.io/ar/api/private/user/facebook-signup", {
+    fetch("https://preprod-api.iberis.io/ar/api/private/user/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ accessToken }),

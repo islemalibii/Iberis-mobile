@@ -15,12 +15,7 @@
 
           <div class="facebook-button-container">
             <div id="facebook-button">
-              <div 
-                class="fb-login-button" 
-                data-size="large" 
-                data-layout="default" 
-                data-auto-logout-link="false" 
-                data-use-continue-as="true">
+              <div class="fb-login-button" data-size="large" data-layout="default" data-auto-logout-link="false" data-use-continue-as="true">
               </div>
             </div>
           </div>
@@ -30,36 +25,18 @@
 
         <ion-list class="list">
           <ion-item class="item">
-            <ion-input
-              :value="fullname"
-              @ionInput="fullname = $event.target.value"
-              placeholder="Fullname"
-            ></ion-input>
+            <ion-input :value="fullname" @ionInput="fullname = $event.target.value" placeholder="Fullname"></ion-input>
           </ion-item>
           <ion-item class="item">
-            <ion-input
-              :value="email"
-              @ionInput="email = $event.target.value"
-              type="email"
-              placeholder="Email"
-            ></ion-input>
+            <ion-input :value="email" @ionInput="email = $event.target.value" type="email" placeholder="Email"></ion-input>
           </ion-item>
           <ion-item class="item">
-            <ion-input
-              :value="password"
-              @ionInput="password = $event.target.value"
-              type="password"
-              placeholder="Password"
-              clearInput="true"
-            ></ion-input>
+            <ion-input :value="password" @ionInput="password = $event.target.value" type="password" placeholder="Password" clearInput="true"></ion-input>
           </ion-item>
         </ion-list>
 
         <div class="checkboxContainer">
-          <ion-checkbox
-            :checked="acceptTerms"
-            @ionChange="acceptTerms = $event.detail.checked"
-          ></ion-checkbox>
+          <ion-checkbox :checked="acceptTerms" @ionChange="acceptTerms = $event.detail.checked"></ion-checkbox>
           <p class="conditions">
             By signing up, you accept the <a href="#">Utilisation Conditions</a>
           </p>
@@ -68,8 +45,6 @@
         <div class="buttonContainer">
           <ion-button expand="block" @click="Signup" class="signupBtn">Sign up</ion-button>
         </div>
-        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-
       </div>
     </ion-content>
   </ion-page>
@@ -79,7 +54,6 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router"; 
 import { signup } from "@/services/authentification";
-import { nextTick } from "vue";
 
 const fullname = ref("");
 const email = ref("");
@@ -106,32 +80,31 @@ const checkConditions = (socialSignup = false) => {
 
 const Signup = async () => {
   if (!checkConditions()) return;
-
   try {
-    const response = await signup({
-      name: fullname.value,
-      email: email.value,
-      password: password.value,
+    const response = await fetch('https://preprod-api.iberis.io/fr/api/private/user/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: fullname.value,
+        email: email.value,
+        password: password.value,
+        terms: acceptTerms.value,
+      })
     });
-    console.log("Signup successful:", response.data);
+    const data = await response.json();
 
-    if (response && response.data) {  
-      console.log("Navigating to /verify...");
-      router.push('/verify'); 
-    } else {
-      throw new Error("Invalid API response");
+
+  
+    if (data.status && data.status.code === 402) {
+      throw new Error(data.status.message); 
     }
+    console.log("Signup successful:", data);
+    router.push('/verify'); 
 
   } catch (error) {
     console.error("Signup failed:", error);
-    if (error.response) {
-      console.error("Response data:", error.response.data);
-      console.error("Response status:", error.response.status);
-      console.error("Response headers:", error.response.headers);
-    } else {
-      console.error("Error message:", error.message);
-    }
-    errorMessage.value = "Signup failed: " + error.message;
+
+    errorMessage.value = error.message || 'Signup failed. Please try again.';
   }
 };
 
@@ -146,7 +119,7 @@ const handleGoogleSignUp = (response) => {
 
   const idToken = response.credential;
 
-  fetch("https://preprod-api.iberis.io/ar/api/private/user/signup", {
+  fetch("https://preprod-api.iberis.io/ar/api/private/user/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken }),
@@ -181,7 +154,7 @@ const handleFacebookLogin = (response) => {
     const { accessToken } = response.authResponse;
  
 
-    fetch("https://preprod-api.iberis.io/ar/api/private/user/signup", {
+    fetch("https://preprod-api.iberis.io/ar/api/private/user/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ accessToken }),

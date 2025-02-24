@@ -1,20 +1,35 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://preprod-api.iberis.io/ar/api/private/user';
+const API_BASE_URL = 'https://preprod-api.iberis.io/fr/api/private/user';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 });
 
 
-export const signup = async (userData: any) => {
+interface SignupData {
+  name: string;
+  email: string;
+  password: string;
+  terms: boolean;
+}
+
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+
+
+export const signup = async (userData: SignupData) => {
   return api.post('/register', userData);
 };
 
-export const login = async (credentials: any) => {
+export const login = async (credentials: LoginCredentials) => {
   return api.post('/login', credentials);
 };
 

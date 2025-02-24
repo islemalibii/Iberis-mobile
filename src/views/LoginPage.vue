@@ -22,12 +22,7 @@
             <div class="facebook-button-container">
               <div id="facebook-button">
                 <div
-                  class="fb-login-button"
-                  data-size="large"
-                  data-layout="default"
-                  data-auto-logout-link="false"
-                  data-use-continue-as="true"
-                ></div>
+                  class="fb-login-button" data-size="large" data-auto-logout-link="false" data-use-continue-as="true"></div>
               </div>
             </div>
           </div>
@@ -36,32 +31,20 @@
           <ion-list class="list">
             <ion-item class="item">
               <ion-img src="/src/assets/email.png" class="input-icon"></ion-img>
-              <ion-input
-                type="email"
-                placeholder="Email"
-                :value="email"
-                @ionInput="email = $event.target.value.trim()"
-                class="input-field"
-              ></ion-input>
+              <ion-input type="email" placeholder="Email" :value="email" @ionInput="email = $event.target.value.trim()" class="input-field"></ion-input>
             </ion-item>
             <p v-if="emailError" class="error">{{ emailError }}</p>
 
             <ion-item class="item">
               <ion-img src="/src/assets/cadenas.png" class="input-icon"></ion-img>
-              <ion-input
-                type="password"
-                placeholder="Password"
-                :value="password"
-                @ionInput="password = $event.target.value.trim()"
-                class="input-field"
-              ></ion-input>
+              <ion-input type="password" placeholder="Password" :value="password" @ionInput="password = $event.target.value.trim()" class="input-field"></ion-input>
             </ion-item>
             <p v-if="passwordError" class="error">{{ passwordError }}</p>
           </ion-list>
 
           <p class="forgot-password">
-  <router-link to="/forgetPassword">Forgot your password?</router-link>
-</p>
+            <router-link to="/forgetPassword">Forgot your password?</router-link>
+          </p>
 
           <ion-button expand="full" class="login-button" @click="handleLogin">
             Log In
@@ -107,17 +90,12 @@ const handleLogin = async () => {
 
   try {
     const response = await login({ email: trimmedEmail, password: trimmedPassword });
-    
-    console.log(response.data);
-
-    if (response.data.userExists) {
+    if (response?.data?.userExists && response?.data?.token) {
       localStorage.setItem('token', response.data.token);  
       router.push('/home'); 
     } else {
       errorMessage.value = 'No account found. Redirecting to sign-up...';
-      setTimeout(() => {
-        router.push('/signup');
-      }, 2000);
+      await router.push('/signup');
     }
   } catch (error) {
     errorMessage.value = 'Invalid credentials. Please try again.';

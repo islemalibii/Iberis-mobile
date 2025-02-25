@@ -95,75 +95,101 @@ const Signup = async () => {
   if (!checkConditions()) return;
   try {
     const response = await signup({
-      name: name.value,
+      name: fullname.value,
       email: email.value,
       password: password.value,
-      terms: true}, { withCredentials: true });
+      terms: true},
+      { withCredentials: true });
 
 
     if (response.data.status?.code === 402) { 
-      throw new Error(response.data.status.message);
+      errorMessage.value = "Email is already in use. Please try another one.";
     }
-
-
     
-    //if (response.data.status?.code === 403) { 
-      //throw new Error("Email validation required. Please verify your email.");
-    //}
-    if (response.data.status?.code === 422) { 
-      throw new Error("Validation errors. Please check your input.");
+    if (response.data.status?.code === 403) { 
+      console.log("Signup successful:", response.data);
+      router.push('/verify'); 
     }
-    console.log("Signup successful:", response.data);
-    router.push('/verify'); 
 
-  } catch (error) {
-    console.error("Signup failed:", error);
 
     if (error.response) {
-      if (error.response.status === 402) {
-        errorMessage.value = "Email is already in use. Please try another one.";
-      } else if (error.response.status === 422) {
-        errorMessage.value = "Validation errors occurred. Please check your inputs.";
+      if (error.response.status === 422) {
+        const errors = response.data.errors || {};
+      if (errors.email) {
+        errorMessage.value = "This email is already registered.";
       } else {
-        errorMessage.value = error.response.data?.status?.message || "Signup failed. Please try again.";
+        errorMessage.value = "Validation failed. Please check your input.";
       }
-    } 
-  }
+      return;
+      } 
+    }
+  }catch (error) {
+    console.error("Signup failed:", error);
+  } 
 
 };
 
 
 
-const handleGoogleSignUp = (response) => {
-  console.log("Google Sign-In Response:", response);
+const handleGoogleSignUp = async (response) => {
+  const idToken = response.credential;
 
+  if (!idToken) {
+    errorMessage.value = "Google authentication failed.";
+    return;
+  }
   if (!acceptTerms.value) {
     errorMessage.value = "You must accept the terms and conditions";
     return;
   }
+  const userPayload = JSON.parse(atob(idToken.split(".")[1])); 
 
-  const idToken = response.credential;
+  const userData = {
+    name: userPayload.name,
+    email: userPayload.email,
+    password: "google_oauth", 
+    terms: true,
+    google_id: userPayload.sub,  
+    idToken
+  };
 
-  fetch("https://preprod-api.iberis.io/ar/api/private/user/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idToken }),
-  })
-  .then(response => response.text()) // Log as text first
-  .then(text => {
-    console.log("Raw response from server:", text); // Check if it's HTML or JSON
-    return JSON.parse(text); 
-  })
-  .then(data => {
-    console.log("Parsed Data:", data);
-   
-    errorMessage.value = "Signup successful!";
-    router.push("/home");
-  })
-  .catch(error => {
-    console.error("Error parsing JSON:", error);
-    errorMessage.value = "Signup failed: " + error.message;
+  try {
+    const res = await fetch("https://preprod-api.iberis.io/fr/api/private/user/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData),
     });
+    const responseData = await res.json();
+    console.log("🚀 Backend Response:", responseData, "Status:", res.status);
+
+
+    if (res.status === 402) {
+      errorMessage.value = "This email is already registered. Please log in.";
+      return;
+    }
+
+    if (res.status === 403 || responseData.status?.code === 403) {
+      errorMessage.value = "Signup successful! Please verify your email.";
+      setTimeout(() => {
+        router.push("/verify");
+      }, 2000);
+      return;
+    }
+
+    if (res.status === 422 || responseData.status?.code === 422) {
+      errorMessage.value = "Signup failed: Missing required information.";
+      return;
+    }
+    if (!res.ok) {
+      errorMessage.value = responseData.message || "Signup failed. Please try again.";
+      return;
+    }
+
+  } catch (error) {
+    console.error(" Signup error:", error);
+    errorMessage.value = "Network error. Please try again.";
+  }
+
 };
 
 
@@ -233,7 +259,6 @@ const handleFacebookLogin = async (response) => {
 
 
 onMounted(() => {
-  const googleScript = document.createElement("script");
   googleScript.src = "https://accounts.google.com/gsi/client";
   googleScript.async = true;
   googleScript.onload = () => {
@@ -242,6 +267,9 @@ onMounted(() => {
         client_id: "543531980890-o7btiuq1iod2423htc4c3av4i6l4j28h.apps.googleusercontent.com",
         callback: handleGoogleSignUp,
         ux_mode: "popup",
+        scope: "openid email profile",
+        response_type: "id_token",
+        prompt: "select_account"
       });
 
       window.google.accounts.id.renderButton(

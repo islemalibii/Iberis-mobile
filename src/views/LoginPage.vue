@@ -152,7 +152,6 @@ const handleFacebookLogin = (response) => {
   console.log("Facebook login response:", response);
   if (response.status === 'connected') {
     const { accessToken } = response.authResponse;
-    // Ensure that accessToken is present
     if (!accessToken) {
       console.error("Access token is missing");
       errorMessage.value = 'Access token is missing. Please try again.';
@@ -208,7 +207,7 @@ onMounted(() => {
   facebookScript.async = true;
   facebookScript.onload = () => {
     window.FB.init({
-      appId: '507777845320852',  // Your Facebook app ID
+      appId: '507777845320852', 
       cookie: true,
       xfbml: true,
       version: 'v15.0',

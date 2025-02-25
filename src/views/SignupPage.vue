@@ -167,43 +167,71 @@ const handleGoogleSignUp = (response) => {
 };
 
 
-const handleFacebookLogin = (response) => {
+const handleFacebookLogin = async (response) => {
   if (response.status === "connected") {
-    console.log("Facebook Sign-In Response:", response);
+    try {
+      if (!acceptTerms.value) {
+        throw new Error("You must accept the terms and conditions");
+      }
 
-    if (!acceptTerms.value) {
-      errorMessage.value = "You must accept the terms and conditions";
-      return;
+      const { accessToken } = response.authResponse;
+      
+      //si mfamesh mail fl fb 
+      const fbUserInfo = await new Promise((resolve, reject) => {
+        window.FB.api('/me?fields=name,email', (response) => { // Modified fields
+          if (!response || response.error) {
+            reject(response?.error || new Error('Failed to fetch Facebook profile'));
+          } else {
+            resolve(response);
+          }
+        });
+      });
+
+      console.log("Facebook User Info:", fbUserInfo);
+
+      if (!fbUserInfo.email) {
+        const manualEmail = prompt("Veuillez entrer votre adresse email:");
+        if (!manualEmail) {
+          throw new Error("Email is required to complete registration");
+        }
+        fbUserInfo.email = manualEmail;
+      }
+
+      const randomPassword = window.crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
+
+      const res = await fetch("https://preprod-api.iberis.io/ar/api/private/user/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: "facebook",
+          access_token: accessToken,
+          name: fbUserInfo.name,
+          email: fbUserInfo.email.toLowerCase(),
+          password: randomPassword,
+          terms: true,
+        }),
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        const errorMsg = data.errors?.email?.[0] || data.status?.message;
+        throw new Error(errorMsg || "Erreur d'inscription Facebook");
+      }
+
+      console.log("Inscription Facebook réussie:", data);
+      router.push("/login");
+    } catch (error) {
+      errorMessage.value = error.message;
+      console.error("Erreur Facebook:", error);
     }
-
-    const { accessToken } = response.authResponse;
-    
-    fetch("https://preprod-api.iberis.io/ar/api/private/user/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accessToken }),
-    })
-    .then(response => response.text()) 
-    .then(text => {
-      console.log("Raw response from server:", text); 
-      return JSON.parse(text);  
-    })
-    .then(data => {
-      console.log("Parsed Data:", data);
-      console.log( "Signup successful!");
-
-      errorMessage.value = "Signup successful!";
-      router.push("/home"); 
-    })
-    .catch(error => {
-      console.error("Error parsing JSON:", error);
-      errorMessage.value = "Signup failed: " + error.message;
-    });
   } else {
-    console.error("Facebook login failed", response);
-    errorMessage.value = "Facebook login failed. Please try again.";
+    errorMessage.value = "Échec de la connexion Facebook. Veuillez réessayer.";
   }
 };
+
+
+
 
 
 onMounted(() => {
@@ -235,12 +263,13 @@ onMounted(() => {
     if (window.FB) {
       console.log("FB object exists");
       window.FB.init({
-        appId: "507777845320852",
-        cookie: true,
-        xfbml: true,
-        version: "v15.0"
-      });
-
+  appId: "507777845320852",
+  cookie: true,
+  xfbml: true,
+  version: "v15.0",
+  status: true,
+  autoLogAppEvents: true,
+});
       window.FB.Event.subscribe("auth.statusChange", handleFacebookLogin);
       window.FB.XFBML.parse();
     } else {

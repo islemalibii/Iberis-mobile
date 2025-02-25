@@ -8,6 +8,7 @@
           <h1>Réinitialisez votre mot de passe</h1>
           <p>Entrez votre email pour recevoir un code de réinitialisation :</p>
   
+
           <ion-list class="list">
             <ion-item class="item">
               <ion-input
@@ -29,20 +30,20 @@
     </ion-page>
   </template>
   
-  <script setup>
-  import { ref } from 'vue';
-  import { useRouter } from 'vue-router';
-  import { sendResetCode } from '@/services/authentification';  
-  
-  const router = useRouter();
-  const email = ref('');
-  const errorMessage = ref('');
-  
-  const handleSendCode = async () => {
+ <script setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { sendResetCode } from '@/services/authentification';  
+
+const router = useRouter();
+const email = ref('');
+const errorMessage = ref('');
+
+const handleSendCode = async () => {
   try {
     const response = await sendResetCode({ email: email.value.trim() });
     if (response.data.success) {
-      router.push(''); 
+      router.push('/confirm-reset-password'); // Redirection vers la page de confirmation
     } else {
       errorMessage.value = 'Email non trouvé ou invalide.';
     }
@@ -51,8 +52,7 @@
     errorMessage.value = 'Une erreur s\'est produite. Essayez encore.';
   }
 };
-
-  </script>
+</script>
   
   <style scoped>
   .ion-padding {

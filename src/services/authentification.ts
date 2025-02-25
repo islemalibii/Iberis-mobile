@@ -40,6 +40,23 @@ export const sendVerificationEmail = async (email: string) => {
 export const verifyCode = async (email: string, code: string) => {
   return api.post('/', { email, code });
 };
-export const sendResetCode = (data: { email: string }) => {
-  return axios.post('/reset', data); 
+export const sendResetCode = async (email: string) => {
+  try {
+    // Génération d'un code à 4 chiffres
+    const resetCode = Math.floor(1000 + Math.random() * 9000).toString();
+    
+    const response = await api.post("/reset", { 
+      email,
+      code: resetCode // Envoyer le code généré au serveur
+    });
+
+    // Stocker le code localement pour la vérification
+    localStorage.setItem('resetCode', resetCode);
+    localStorage.setItem('resetEmail', email);
+
+    return response.data;
+    
+  } catch (error) {
+    // Gestion d'erreur existante
+  }
 };

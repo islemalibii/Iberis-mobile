@@ -43,20 +43,18 @@
           </ion-list>
 
           <p class="forgot-password">
-            <router-link to="/forgetPassword">Forgot your password?</router-link>
+            <router-link to="/reset">Forgot your password?</router-link>
           </p>
 
           <ion-button expand="full" class="login-button" @click="handleLogin">
             Log In
           </ion-button>
-
           <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
         </div>
       </div>
     </ion-content>
   </ion-page>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -123,18 +121,16 @@ const handleLogin = async () => {
   }
 };
 
-
-
-
 const handleGoogleSignUp = (response: any) => {
   console.log("Google Sign-In Response:", response);
   const idToken = response.credential;
 
-  fetch("https://preprod-api.iberis.io/ar/api/private/user/google-signIn", {
+  fetch("https://preprod-api.iberis.io/ar/api/private/user/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken })
   })
+
     .then((res) => res.json())
     .then((data) => {
       if (data.userExists) {
@@ -171,6 +167,7 @@ const handleFacebookLogin = (response) => {
           errorMessage.value = data.status?.message || 'Facebook login failed. Please try again.';
         }
       })
+      
       .catch(err => {
         console.error('Error with Facebook login:', err);
         errorMessage.value = 'Facebook login failed. Please try again.';

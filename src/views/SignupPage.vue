@@ -211,9 +211,7 @@ const handleFacebookLogin = async (response) => {
           terms: true,
         }),
       });
-
       const data = await res.json();
-      
       if (!res.ok) {
         const errorMsg = data.errors?.email?.[0] || data.status?.message;
         throw new Error(errorMsg || "Erreur d'inscription Facebook");

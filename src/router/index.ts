@@ -29,7 +29,7 @@ const routes: Array<RouteRecordRaw> = [
   component: VerificationPage
   },
   {
-    path: '/forgetPassword',
+    path: '/reset',
     component:ForgetPassword
     },
 ]

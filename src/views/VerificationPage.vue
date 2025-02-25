@@ -12,13 +12,12 @@
                 <input v-for="(digit, index) in code"
                     :key="index"
                     v-model="code[index]"
-                    @input="moveToNext(index)"
+                    @input="handleInput(index)"
                     @keydown.backspace="moveToPrev(index)"
                     maxlength="1"
                     type="text"
                     class="code-box"
-                    ref="inputs"
-                />
+                    ref="inputs"/>
             </div>
             <div class="buttons">
                 <ion-button expand="full" class="resend-button" @click="resendCode">Resend</ion-button>
@@ -31,16 +30,29 @@
   
   
 <script setup>
-    import { ref, computed } from "vue";
+    import { ref, computed, onMounted } from "vue";
+    import { useRoute } from "vue-router";
+    import axios from "axios";
 
     const code = ref(["", "", "", ""]);
+    const inputs = ref([]);
+    const errorMessage = ref('');
+    const route = useRoute();
+    const email = ref(route.query?.email ?? "");
+    const hashedUserId = ref(route.query.hashedId || "");
 
     const isCodeComplete = computed(() => code.value.every((digit) => digit !== ""));
-      const moveToNext = (index) => {
-    if (code.value[index] && index < code.value.length - 1) {
-      inputs.value[index + 1].focus();
-    }
-  };
+
+    const moveToNext = (index) => {
+      if (code.value[index] && index < code.value.length - 1) {
+        inputs.value[index + 1]?.focus();
+      }
+    };
+
+    const handleInput = (index) => {
+      code.value[index] = code.value[index].replace(/[^0-9]/g, ""); 
+      moveToNext(index); 
+    };
 
     const moveToPrev = (index) => {
       if (!code.value[index] && index > 0) {
@@ -48,8 +60,46 @@
       }
     };
 
-    const submitCode = () => alert("Submitting Code: " + code.value.join(""));
-    const resendCode = () => alert("Resending Code...");
+    const submitCode = async () => {
+      try {
+        const verificationCode = code.value.join("");
+
+        const response = await axios.post("https://preprod-api.iberis.io/fr/api/private/user/validate", {
+          email: email.value,
+          code: verificationCode,
+        });
+
+        console.log("Verification Successful:", response.data);
+        route.push("/home"); 
+      } catch (error) {
+        console.error(" Verification Failed:", error);
+        errorMessage.value = "Invalid verification code. Please try again.";
+      }
+    };
+    const resendCode = async () => {
+      console.log(" Resend button clicked!");
+      console.log(" hashedUserId:", hashedUserId.value); 
+      try {
+      if (!hashedUserId.value) {
+        errorMessage.value = "User ID is missing. Cannot resend code.";
+        return;
+      }
+
+      const response = await axios.post(
+        `https://preprod-api.iberis.io/fr/api/private/user/email/pending/${hashedUserId.value}`
+      );
+
+      console.log(" Code Resent:", response.data.data?.user?.validation);
+    } catch (error) {
+      console.error(" Resend Failed:", error);
+      errorMessage.value = "Failed to resend code. Please try again.";
+    }
+  };
+
+
+    onMounted(() => {
+      inputs.value = document.querySelectorAll(".code-box"); 
+    });
 </script>
 
 

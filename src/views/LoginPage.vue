@@ -121,26 +121,33 @@ const handleLogin = async () => {
   }
 };
 
-const handleGoogleSignUp = (response: any) => {
+
+
+const handleGoogleSignUp = async (response: any) => {
   console.log("Google Sign-In Response:", response);
   const idToken = response.credential;
 
-  fetch("https://preprod-api.iberis.io/ar/api/private/user/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idToken })
-  })
+  const userPayload = JSON.parse(atob(idToken.split(".")[1])); 
 
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.userExists) {
-        localStorage.setItem('token', data.token); 
-        router.push('/home');  
-      } else {
-        router.push('/signup');
-      }
-    })
-    .catch((err) => console.error("Error:", err));
+
+  try {
+    const res = await login({ idToken,
+       email: userPayload.email,
+       password: "google_oauth" });
+
+    console.log(" Backend Response:", res.data);
+
+    if (res.data.userExists) {
+      console.log("🔑 Token Received:", res.data.token);
+      localStorage.setItem("token", res.data.token); 
+      router.push("/home"); 
+    } else {
+      console.warn("⚠️ User does not exist. Redirecting to signup.");
+      router.push("/signup"); 
+    }
+  }catch (error) {
+    console.error(" Google Login Failed:", error);
+    }
 };
 
 

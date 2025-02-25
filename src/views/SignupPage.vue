@@ -25,7 +25,7 @@
 
         <ion-list class="list">
           <ion-item class="item">
-            <ion-input :value="fullname" @ionInput="fullname=$event.target.value" placeholder="Fullname"></ion-input>
+            <ion-input :value="name" @ionInput="name=$event.target.value" placeholder="Fullname"></ion-input>
           </ion-item>
           <ion-item class="item">
             <ion-input :value="email" @ionInput="email=$event.target.value" type="email" placeholder="Email"></ion-input>
@@ -65,11 +65,11 @@ const router = useRouter();
 
 const checkConditions = () => {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.value || !fullname.value || !password.value) {
+    if (!email.value || !name.value || !password.value) {
       errorMessage.value = "fill all the fields.";
       return false;
     }
-    if (!fullname.value || fullname.value.length < 3 || fullname.value.length > 50) {
+    if (!name.value || name.value.length < 3 || name.value.length > 50) {
       errorMessage.value = "Full name must be between 3-50 characters.";
       return false;
     }
@@ -104,12 +104,22 @@ const Signup = async () => {
 
     if (response.data.status?.code === 402) { 
       errorMessage.value = "Email is already in use. Please try another one.";
+      return;
+
     }
     
     if (response.data.status?.code === 403) { 
       console.log("Signup successful:", response.data);
-      router.push('/verify'); 
+      console.log("Verification Code:", response.data.data?.user?.validation);
+
+      router.push({ path: "/verify", query: {
+        email: email.value, 
+        hashedId: response.data.data.user.hashed_id } });
+      return;
+      
     }
+  }catch (error) {
+      console.error("Signup failed:", error);
 
 
     if (error.response) {
@@ -123,9 +133,8 @@ const Signup = async () => {
       return;
       } 
     }
-  }catch (error) {
-    console.error("Signup failed:", error);
-  } 
+  }
+  
 
 };
 
@@ -160,7 +169,7 @@ const handleGoogleSignUp = async (response) => {
       body: JSON.stringify(userData),
     });
     const responseData = await res.json();
-    console.log("🚀 Backend Response:", responseData, "Status:", res.status);
+    console.log(" Backend Response:", responseData, "Status:", res.status);
 
 
     if (res.status === 402) {
@@ -170,9 +179,11 @@ const handleGoogleSignUp = async (response) => {
 
     if (res.status === 403 || responseData.status?.code === 403) {
       errorMessage.value = "Signup successful! Please verify your email.";
-      setTimeout(() => {
-        router.push("/verify");
-      }, 2000);
+      router.push({ path: "/verify", query: { 
+        email: userPayload.email, 
+        hashedId: responseData.data?.user?.hashed_id } });
+
+
       return;
     }
 
@@ -253,7 +264,6 @@ const handleFacebookLogin = async (response) => {
     errorMessage.value = "Échec de la connexion Facebook. Veuillez réessayer.";
   }
 };
-
 
 
 

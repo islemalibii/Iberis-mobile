@@ -95,7 +95,7 @@ const Signup = async () => {
   if (!checkConditions()) return;
   try {
     const response = await signup({
-      name: fullname.value,
+      name: name.value,
       email: email.value,
       password: password.value,
       terms: true},
@@ -259,6 +259,8 @@ const handleFacebookLogin = async (response) => {
 
 
 onMounted(() => {
+  const googleScript = document.createElement("script");
+
   googleScript.src = "https://accounts.google.com/gsi/client";
   googleScript.async = true;
   googleScript.onload = () => {

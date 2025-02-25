@@ -25,13 +25,13 @@
 
         <ion-list class="list">
           <ion-item class="item">
-            <ion-input :value="fullname" @ionInput="fullname = $event.target.value" placeholder="Fullname"></ion-input>
+            <ion-input :value="fullname" @ionInput="fullname=$event.target.value" placeholder="Fullname"></ion-input>
           </ion-item>
           <ion-item class="item">
-            <ion-input :value="email" @ionInput="email = $event.target.value" type="email" placeholder="Email"></ion-input>
+            <ion-input :value="email" @ionInput="email=$event.target.value" type="email" placeholder="Email"></ion-input>
           </ion-item>
           <ion-item class="item">
-            <ion-input :value="password" @ionInput="password = $event.target.value" type="password" placeholder="Password" clearInput="true"></ion-input>
+            <ion-input :value="password" @ionInput="password=$event.target.value" type="password" placeholder="Password" clearInput="true"></ion-input>
           </ion-item>
         </ion-list>
 
@@ -46,6 +46,7 @@
           <ion-button expand="block" @click="Signup" class="signupBtn">Sign up</ion-button>
         </div>
       </div>
+      <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
     </ion-content>
   </ion-page>
 </template>
@@ -62,17 +63,29 @@ const acceptTerms = ref(false);
 const errorMessage = ref('');
 const router = useRouter();  
 
-const checkConditions = (socialSignup = false) => {
-  if (!socialSignup) {
-    if (!fullname.value || !email.value || !password.value) {
-      errorMessage.value = "Please fill in all fields";
+const checkConditions = () => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.value || !fullname.value || !password.value) {
+      errorMessage.value = "fill all the fields.";
+      return false;
+    }
+    if (!fullname.value || fullname.value.length < 3 || fullname.value.length > 50) {
+      errorMessage.value = "Full name must be between 3-50 characters.";
+      return false;
+    }
+    if (!email.value || !regex.test(email.value)) {
+      errorMessage.value = "Please enter a valid email address.";
+      return false;
+    }
+    if (!password.value || password.value.length < 6) {
+      errorMessage.value = "Password must be at least 6 characters long.";
       return false;
     }
     if (!acceptTerms.value) {
       errorMessage.value = "You must accept the terms and conditions";
       return false;
-    }
   }
+
   return true;
 };
 
@@ -81,31 +94,42 @@ const checkConditions = (socialSignup = false) => {
 const Signup = async () => {
   if (!checkConditions()) return;
   try {
-    const response = await fetch('https://preprod-api.iberis.io/fr/api/private/user/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: fullname.value,
-        email: email.value,
-        password: password.value,
-        terms: acceptTerms.value,
-      })
-    });
-    const data = await response.json();
+    const response = await signup({
+      name: fullname.value,
+      email: email.value,
+      password: password.value,
+      terms: true}, { withCredentials: true });
 
 
-  
-    if (data.status && data.status.code === 402) {
-      throw new Error(data.status.message); 
+    if (response.data.status?.code === 402) { 
+      throw new Error(response.data.status.message);
     }
-    console.log("Signup successful:", data);
+
+
+    
+    //if (response.data.status?.code === 403) { 
+      //throw new Error("Email validation required. Please verify your email.");
+    //}
+    if (response.data.status?.code === 422) { 
+      throw new Error("Validation errors. Please check your input.");
+    }
+    console.log("Signup successful:", response.data);
     router.push('/verify'); 
 
   } catch (error) {
     console.error("Signup failed:", error);
 
-    errorMessage.value = error.message || 'Signup failed. Please try again.';
+    if (error.response) {
+      if (error.response.status === 402) {
+        errorMessage.value = "Email is already in use. Please try another one.";
+      } else if (error.response.status === 422) {
+        errorMessage.value = "Validation errors occurred. Please check your inputs.";
+      } else {
+        errorMessage.value = error.response.data?.status?.message || "Signup failed. Please try again.";
+      }
+    } 
   }
+
 };
 
 

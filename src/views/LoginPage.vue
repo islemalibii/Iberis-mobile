@@ -68,39 +68,61 @@ const password = ref('');
 const errorMessage = ref('');
 const emailError = ref('');
 const passwordError = ref('');
-
 const handleLogin = async () => {
+  const trimmedEmail = email.value.trim();
+  const trimmedPassword = password.value.trim();
+
   emailError.value = '';
   passwordError.value = '';
   errorMessage.value = '';
 
-  const trimmedEmail = email.value.trim();
-  const trimmedPassword = password.value.trim();
-
   if (!trimmedEmail) {
     emailError.value = 'Email field cannot be empty!';
+    return;
   }
   if (!trimmedPassword) {
     passwordError.value = 'Password field cannot be empty!';
-  }
-
-  if (emailError.value || passwordError.value) {
-    return; 
+    return;
   }
 
   try {
-    const response = await login({ email: trimmedEmail, password: trimmedPassword });
-    if (response?.data?.userExists && response?.data?.token) {
-      localStorage.setItem('token', response.data.token);  
+    const response = await fetch('https://preprod-api.iberis.io/fr/api/private/user/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      
+      },
+      body: JSON.stringify({
+        email: trimmedEmail,
+        password: trimmedPassword,
+      }),
+    });
+
+    const data = await response.json(); 
+
+    if (response.status === 401) {
+      errorMessage.value = 'Identifiants incorrects ou accès non autorisé.';
+      return;
+    }
+
+    if (data.status && data.status.code === 402) {
+      errorMessage.value = "Veuillez valider votre adresse e-mail avant de vous connecter.";
+      return;
+    }
+
+    if (data.status && data.status.code === 200) {
+      console.log("Login successful:", data);
       router.push('/home'); 
     } else {
-      errorMessage.value = 'No account found. Redirecting to sign-up...';
-      await router.push('/signup');
+      errorMessage.value = "Erreur inattendue. Code : " + (data.status?.code || "inconnu");
     }
+
   } catch (error) {
-    errorMessage.value = 'Invalid credentials. Please try again.';
+    console.error("Login failed:", error);
+    errorMessage.value = 'Échec de la connexion. Veuillez réessayer.';
   }
 };
+
 
 
 

@@ -4,6 +4,7 @@ import HomePage from '../views/HomePage.vue'
 import LoginPage from '@/views/LoginPage.vue';
 import SignupPage from '@/views/SignupPage.vue';
 import VerificationPage from '@/views/VerificationPage.vue';
+import ForgetPassword from '@/views/forgetPassword.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -27,6 +28,10 @@ const routes: Array<RouteRecordRaw> = [
   path: '/verify',
   component: VerificationPage
   },
+  {
+    path: '/forgetPassword',
+    component:ForgetPassword
+    },
 ]
 
 const router = createRouter({

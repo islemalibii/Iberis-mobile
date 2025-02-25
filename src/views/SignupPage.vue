@@ -20,7 +20,7 @@
             </div>
           </div>
         </div>
-
+ 
         <p class="or">Or</p>
 
         <ion-list class="list">
@@ -56,7 +56,7 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router"; 
 import { signup } from "@/services/authentification";
 
-const fullname = ref("");
+const name = ref("");
 const email = ref("");
 const password = ref("");
 const acceptTerms = ref(false);
@@ -95,7 +95,7 @@ const Signup = async () => {
   if (!checkConditions()) return;
   try {
     const response = await signup({
-      name: fullname.value,
+      name: name.value,
       email: email.value,
       password: password.value,
       terms: true}, { withCredentials: true });
@@ -131,6 +131,7 @@ const Signup = async () => {
   }
 
 };
+
 
 
 const handleGoogleSignUp = (response) => {

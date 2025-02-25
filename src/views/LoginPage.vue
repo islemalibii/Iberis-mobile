@@ -148,30 +148,40 @@ const handleGoogleSignUp = (response: any) => {
 };
 
 
-const handleFacebookLogin = (response: any) => {
-  if (response.status === "connected") {
-    console.log("Facebook Sign-In Response:", response);
+const handleFacebookLogin = (response) => {
+  console.log("Facebook login response:", response);
+  if (response.status === 'connected') {
     const { accessToken } = response.authResponse;
+    // Ensure that accessToken is present
+    if (!accessToken) {
+      console.error("Access token is missing");
+      errorMessage.value = 'Access token is missing. Please try again.';
+      return;
+    }
 
-    fetch("https://preprod-api.iberis.io/ar/api/private/user/facebook-signIn", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accessToken })
+    fetch('https://preprod-api.iberis.io/fr/api/private/user/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken }),
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.userExists) {
-          localStorage.setItem('token', data.token);  
-          router.push('/home');  
+      .then(res => res.json())
+      .then(data => {
+        if (data.status?.code === 200) {
+          router.push('/home');
         } else {
-          router.push('/signup');
+          errorMessage.value = data.status?.message || 'Facebook login failed. Please try again.';
         }
       })
-      .catch((err) => console.error("Error:", err));
+      .catch(err => {
+        console.error('Error with Facebook login:', err);
+        errorMessage.value = 'Facebook login failed. Please try again.';
+      });
   } else {
-    console.error("Facebook login failed", response);
+    console.error('Facebook login failed:', response);
+    errorMessage.value = 'Facebook login failed. Please try again.';
   }
 };
+
 
 onMounted(() => {
   const googleScript = document.createElement("script");
@@ -193,19 +203,18 @@ onMounted(() => {
   };
   document.head.appendChild(googleScript);
 
-  const facebookScript = document.createElement("script");
-  facebookScript.src = "https://connect.facebook.net/en_US/sdk.js";
+  const facebookScript = document.createElement('script');
+  facebookScript.src = 'https://connect.facebook.net/en_US/sdk.js';
   facebookScript.async = true;
   facebookScript.onload = () => {
     window.FB.init({
-      appId:"507777845320852",
+      appId: '507777845320852',  // Your Facebook app ID
       cookie: true,
       xfbml: true,
-      version: "v15.0"
+      version: 'v15.0',
     });
 
-    window.FB.Event.subscribe("auth.statusChange", handleFacebookLogin);
-    window.FB.XFBML.parse();
+    window.FB.Event.subscribe('auth.statusChange', handleFacebookLogin);
   };
   document.head.appendChild(facebookScript);
 });

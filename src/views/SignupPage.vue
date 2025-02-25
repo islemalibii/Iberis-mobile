@@ -156,6 +156,7 @@ const handleGoogleSignUp = (response) => {
   })
   .then(data => {
     console.log("Parsed Data:", data);
+   
     errorMessage.value = "Signup successful!";
     router.push("/home");
   })
@@ -166,45 +167,41 @@ const handleGoogleSignUp = (response) => {
 };
 
 
-
-
-
-
 const handleFacebookLogin = (response) => {
   if (response.status === "connected") {
     console.log("Facebook Sign-In Response:", response);
 
-    if (!checkConditions(true)) return; 
+    if (!acceptTerms.value) {
+      errorMessage.value = "You must accept the terms and conditions";
+      return;
+    }
 
     const { accessToken } = response.authResponse;
- 
-
+    
     fetch("https://preprod-api.iberis.io/ar/api/private/user/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ accessToken }),
     })
-    .then(response => response.text()) // Log as text first
-      .then(text => {
-        console.log("Raw response from server:", text);
-        try {
-          return JSON.parse(text);
-        } catch (e) {
-          throw new Error("Invalid JSON response");
-        }
-      })
-      .then(data => {
-        console.log("Parsed Data:", data);
-        errorMessage.value = "Signup successful!";
-        router.push("/home");
-      })
-      .catch(error => {
-        console.error("Error parsing JSON:", error);
-        errorMessage.value = "Signup failed: " + error.message;
-      });
+    .then(response => response.text()) 
+    .then(text => {
+      console.log("Raw response from server:", text); 
+      return JSON.parse(text);  
+    })
+    .then(data => {
+      console.log("Parsed Data:", data);
+      console.log( "Signup successful!");
+
+      errorMessage.value = "Signup successful!";
+      router.push("/home"); 
+    })
+    .catch(error => {
+      console.error("Error parsing JSON:", error);
+      errorMessage.value = "Signup failed: " + error.message;
+    });
   } else {
     console.error("Facebook login failed", response);
-    errorMessage.value = "Facebook login failed.";
+    errorMessage.value = "Facebook login failed. Please try again.";
   }
 };
 

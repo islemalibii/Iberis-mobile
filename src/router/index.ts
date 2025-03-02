@@ -1,11 +1,14 @@
+import { vue } from '@vitejs/plugin-vue';
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
 import HomePage from '../views/HomePage.vue'
 import LoginPage from '@/views/LoginPage.vue';
 import SignupPage from '@/views/SignupPage.vue';
 import VerificationPage from '@/views/VerificationPage.vue';
-import ForgetPassword from '@/views/ForgetPassword.vue';
-
+import ForgetPassword from '@/views/forgetPassword.vue';
+import veriftelephone from '@/views/veriftelephone.vue';
+import ResetCheck from '@/views/ResetCheck.vue';
+import Newpassword from '@/views/newpassword.vue';
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
@@ -32,6 +35,19 @@ const routes: Array<RouteRecordRaw> = [
     path: '/reset',
     component:ForgetPassword
     },
+    {
+      path: '/veriftlph',
+      component:veriftelephone
+      },
+      {
+        path: '/reset/check', 
+        component: ResetCheck,
+      },
+      {
+        path: '/reset/check/new', 
+        component: Newpassword,
+      },
+
 ]
 
 const router = createRouter({

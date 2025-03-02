@@ -31,13 +31,14 @@
   
 <script setup>
     import { ref, computed, onMounted } from "vue";
-    import { useRoute } from "vue-router";
+    import { useRoute,useRouter } from "vue-router";
     import axios from "axios";
 
     const code = ref(["", "", "", ""]);
     const inputs = ref([]);
     const errorMessage = ref('');
     const route = useRoute();
+    const router = useRouter();
     const email = ref(route.query?.email ?? "");
     const hashedUserId = ref(route.query.hashedId || "");
 
@@ -64,13 +65,13 @@
       try {
         const verificationCode = code.value.join("");
 
-        const response = await axios.post("https://preprod-api.iberis.io/fr/api/private/user/validate", {
+        const response = await axios.post("https://preprod-api.iberis.io/fr/api/private/user/email/validate", {
           email: email.value,
           code: verificationCode,
         });
 
         console.log("Verification Successful:", response.data);
-        route.push("/home"); 
+        router.push("/login"); 
       } catch (error) {
         console.error(" Verification Failed:", error);
         errorMessage.value = "Invalid verification code. Please try again.";

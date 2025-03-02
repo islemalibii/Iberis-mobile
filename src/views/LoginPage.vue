@@ -66,6 +66,8 @@ const password = ref('');
 const errorMessage = ref('');
 const emailError = ref('');
 const passwordError = ref('');
+
+
 const handleLogin = async () => {
   const trimmedEmail = email.value.trim();
   const trimmedPassword = password.value.trim();
@@ -97,6 +99,8 @@ const handleLogin = async () => {
     });
 
     const data = await response.json(); 
+    
+    
 
     if (response.status === 401) {
       errorMessage.value = 'Identifiants incorrects ou accès non autorisé.';
@@ -108,12 +112,16 @@ const handleLogin = async () => {
       return;
     }
 
-    if (data.status && data.status.code === 200) {
+    if (data.status && data.status.code === 203) {
+      if (data.token) {
+      localStorage.setItem("access_token", data.token);
+      console.log("Login successful, token saved.");
+      return data.token;
+      }
       console.log("Login successful:", data);
-      router.push('/home'); 
-    } else {
-      errorMessage.value = "Erreur inattendue. Code : " + (data.status?.code || "inconnu");
-    }
+      console.log("create company");
+      router.push('/create-company'); 
+    } 
 
   } catch (error) {
     console.error("Login failed:", error);

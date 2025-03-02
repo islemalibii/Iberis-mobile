@@ -5,6 +5,8 @@ import LoginPage from '@/views/LoginPage.vue';
 import SignupPage from '@/views/SignupPage.vue';
 import VerificationPage from '@/views/VerificationPage.vue';
 import ForgetPassword from '@/views/ForgetPassword.vue';
+import CreatecompanyPage from '@/views/CreatecompanyPage.vue';
+
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -31,7 +33,11 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/reset',
     component:ForgetPassword
-    },
+  },
+  {
+    path: '/create-company',
+    component:CreatecompanyPage
+  },
 ]
 
 const router = createRouter({

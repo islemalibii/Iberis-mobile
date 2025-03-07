@@ -6,6 +6,11 @@ import SignupPage from '@/views/SignupPage.vue';
 import VerificationPage from '@/views/VerificationPage.vue';
 import ForgetPassword from '@/views/ForgetPassword.vue';
 import CreatecompanyPage from '@/views/CreatecompanyPage.vue';
+import veriftelephone from '@/views/veriftelephone.vue';
+import ResetCheck from '@/views/ResetCheck.vue';
+import Newpassword from '@/views/newpassword.vue';
+
+
 
 
 const routes: Array<RouteRecordRaw> = [

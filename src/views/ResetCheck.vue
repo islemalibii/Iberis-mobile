@@ -8,7 +8,7 @@
           <h1>Vérification du code</h1>
           <p>Entrez le code reçu à l'adresse {{ email }}</p>
   
-          <!-- Inputs pour le code à 4 chiffres -->
+
           <div class="code-inputs">
             <input
               v-for="(digit, index) in 4"
@@ -25,7 +25,7 @@
             />
           </div>
   
-          <!-- Boutons de vérification et renvoi de code -->
+
           <div class="buttonContainer">
             <ion-button
               @click="verifyCode"
@@ -44,7 +44,7 @@
             </ion-button>
           </div>
   
-          <!-- Affichage des messages d'erreur -->
+
           <div v-if="errorMessage" class="error-message">
             <ion-icon :icon="alertCircleOutline" class="error-icon"></ion-icon>
             <p>{{ errorMessage }}</p>
@@ -71,16 +71,47 @@
   const router = useRouter();
   const route = useRoute();
   const email = ref(route.query.email || "");
+<<<<<<< HEAD
+  const code = ref(Array(4).fill("")); // Tableau pour stocker les 4 chiffres du code
+=======
+<<<<<<< HEAD
+  const code = ref(Array(4).fill("")); 
+>>>>>>> 192e360 (prodileuser)
+  const errorMessage = ref("");
+  const isLoading = ref(false);
+  const inputs = ref([]); // Références des inputs
+  
+<<<<<<< HEAD
+  // Vérifie si le code est complet (4 chiffres)
+=======
+=======
   const code = ref(Array(4).fill("")); // Tableau pour stocker les 4 chiffres du code
   const errorMessage = ref("");
   const isLoading = ref(false);
   const inputs = ref([]); // Références des inputs
   
   // Vérifie si le code est complet (4 chiffres)
+>>>>>>> 06ed123 (prodileuser)
+>>>>>>> 192e360 (prodileuser)
   const isCodeComplete = computed(() => {
     return code.value.every((digit) => digit.length === 1);
   });
   
+<<<<<<< HEAD
+  // Gestion de la saisie dans les inputs
+=======
+<<<<<<< HEAD
+>>>>>>> 192e360 (prodileuser)
+  const handleInput = (index, event) => {
+    const value = event.target.value;
+    if (value.length === 1 && index < 3) {
+      // Passe à l'input suivant
+      inputs.value[index + 1]?.focus();
+    } else if (value.length === 1 && index === 3) {
+<<<<<<< HEAD
+      // Si c'est la dernière case, on reste dessus
+=======
+=======
   // Gestion de la saisie dans les inputs
   const handleInput = (index, event) => {
     const value = event.target.value;
@@ -89,18 +120,50 @@
       inputs.value[index + 1]?.focus();
     } else if (value.length === 1 && index === 3) {
       // Si c'est la dernière case, on reste dessus
+>>>>>>> 06ed123 (prodileuser)
+>>>>>>> 192e360 (prodileuser)
       inputs.value[index]?.blur();
     }
   };
   
+<<<<<<< HEAD
   // Gestion de la suppression avec la touche backspace
   const handleBackspace = (index, event) => {
     if (event.target.value.length === 0 && index > 0) {
       // Retourne à l'input précédent
+=======
+<<<<<<< HEAD
+  const handleBackspace = (index, event) => {
+    if (event.target.value.length === 0 && index > 0) {
+=======
+  // Gestion de la suppression avec la touche backspace
+  const handleBackspace = (index, event) => {
+    if (event.target.value.length === 0 && index > 0) {
+      // Retourne à l'input précédent
+>>>>>>> 06ed123 (prodileuser)
+>>>>>>> 192e360 (prodileuser)
       inputs.value[index - 1]?.focus();
     }
   };
   
+<<<<<<< HEAD
+  // Gestion du collage (paste) du code
+=======
+<<<<<<< HEAD
+>>>>>>> 192e360 (prodileuser)
+  const handlePaste = (event) => {
+    event.preventDefault(); // Empêche le comportement par défaut
+    const pasteData = event.clipboardData.getData("text").trim(); // Récupère le texte collé
+    if (/^\d{4}$/.test(pasteData)) {
+      // Vérifie si le texte collé est un code à 4 chiffres
+      for (let i = 0; i < 4; i++) {
+        code.value[i] = pasteData[i]; // Répartit les chiffres dans les cases
+      }
+<<<<<<< HEAD
+      inputs.value[3]?.focus(); // Focus sur la dernière case
+=======
+      inputs.value[3]?.focus(); 
+=======
   // Gestion du collage (paste) du code
   const handlePaste = (event) => {
     event.preventDefault(); // Empêche le comportement par défaut
@@ -111,6 +174,8 @@
         code.value[i] = pasteData[i]; // Répartit les chiffres dans les cases
       }
       inputs.value[3]?.focus(); // Focus sur la dernière case
+>>>>>>> 06ed123 (prodileuser)
+>>>>>>> 192e360 (prodileuser)
     } else {
       errorMessage.value = "Le code collé doit contenir exactement 4 chiffres.";
     }
@@ -124,8 +189,17 @@
       }
   
       isLoading.value = true;
+<<<<<<< HEAD
       const fullCode = code.value.join(""); // Concatène les 4 chiffres
   
+=======
+<<<<<<< HEAD
+      const fullCode = code.value.join(""); 
+=======
+      const fullCode = code.value.join(""); // Concatène les 4 chiffres
+  
+>>>>>>> 06ed123 (prodileuser)
+>>>>>>> 192e360 (prodileuser)
       const response = await axios.post(
         `${API_BASE_URL}/fr/api/private/user/reset/check`,
         { token: fullCode }
@@ -148,7 +222,14 @@
     }
   };
   
+<<<<<<< HEAD
   // Renvoi du code
+=======
+<<<<<<< HEAD
+=======
+  // Renvoi du code
+>>>>>>> 06ed123 (prodileuser)
+>>>>>>> 192e360 (prodileuser)
   const resendCode = async () => {
     try {
       isLoading.value = true;
@@ -172,7 +253,14 @@
     }
   };
   
+<<<<<<< HEAD
   // Initialisation des références des inputs
+=======
+<<<<<<< HEAD
+=======
+  // Initialisation des références des inputs
+>>>>>>> 06ed123 (prodileuser)
+>>>>>>> 192e360 (prodileuser)
   onMounted(() => {
     inputs.value = Array.from({ length: 4 }, (_, i) =>
       document.querySelector(`input[ref="input${i}"]`)

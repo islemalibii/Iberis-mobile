@@ -46,10 +46,11 @@
               <ion-spinner v-else name="crescent"></ion-spinner>
             </ion-button>
   
-            <!-- Affichage des messages d'erreur -->
+
             <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   
-            <!-- Affichage des messages de succès -->
+            <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+
             <p v-if="successMessage" class="success">{{ successMessage }}</p>
           </div>
         </div>

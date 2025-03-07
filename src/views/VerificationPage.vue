@@ -27,8 +27,16 @@
       </ion-content>
     </ion-page>
   </template>
+<<<<<<< HEAD
   
   
+=======
+<<<<<<< HEAD
+=======
+  
+  
+>>>>>>> 06ed123 (prodileuser)
+>>>>>>> 192e360 (prodileuser)
 <script setup>
     import { verifyEmail, resendVerifyCode } from "@/services/authentification"; 
     import { ref, computed, onMounted } from "vue";

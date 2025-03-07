@@ -13,15 +13,7 @@
         <input v-model="otpCode" type="text" id="otp" placeholder="Entrez le code reçu" />
         <button :disabled="!otpCode" @click="verifyOTP">Vérifier</button>
       </div>
-<<<<<<< HEAD
-      
-=======
-<<<<<<< HEAD
-    
-=======
-      
->>>>>>> 06ed123 (prodileuser)
->>>>>>> 192e360 (prodileuser)
+
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
     </div>
   </template>

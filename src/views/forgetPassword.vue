@@ -15,14 +15,28 @@
               type="email"
               placeholder="Email"
               class="input-field"
+              :disabled="isLoading"
             ></ion-input>
           </ion-item>
         </ion-list>
 
         <div class="buttonContainer">
-          <ion-button expand="block" @click="handleSendCode" class="signupBtn">Envoyer le code</ion-button>
+          <ion-button 
+            expand="block" 
+            @click="handleSendCode" 
+            class="signupBtn"
+            :disabled="isLoading || !canResend"
+          >
+            <span v-if="!isLoading">Envoyer le code</span>
+            <ion-spinner v-else name="crescent"></ion-spinner>
+          </ion-button>
         </div>
 
+        <p v-if="!canResend" class="info">
+          Vous pourrez renvoyer un code dans {{ resendDelay }} secondes.
+        </p>
+
+        <p v-if="successMessage" class="success">{{ successMessage }}</p>
         <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
       </div>
     </ion-content>
@@ -31,131 +45,188 @@
 
 <script setup>
 import { ref } from 'vue';
-import { sendResetCode } from '@/services/authentification';
+import axios from 'axios';
 import { useRouter } from 'vue-router';
-import { IonPage, IonContent, IonList, IonItem, IonInput, IonButton } from '@ionic/vue';
+import { 
+  IonPage, 
+  IonContent, 
+  IonList, 
+  IonItem, 
+  IonInput, 
+  IonButton,
+  IonSpinner 
+} from '@ionic/vue';
 
+const API_BASE_URL = 'https://api.iberis.io';
 const router = useRouter();
 const email = ref('');
 const errorMessage = ref('');
 const successMessage = ref('');
 const isLoading = ref(false);
+const canResend = ref(true);
+const resendDelay = ref(30);
 
 const validateEmail = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email);
 };
 
+const startResendTimer = () => {
+  canResend.value = false;
+  const interval = setInterval(() => {
+    resendDelay.value--;
+    if (resendDelay.value <= 0) {
+      clearInterval(interval);
+      canResend.value = true;
+      resendDelay.value = 30;
+    }
+  }, 1000);
+};
+
 const handleSendCode = async () => {
   try {
-    console.log('[DEBUG] Début de la procédure d\'envoi de code');
     errorMessage.value = '';
     successMessage.value = '';
     
     if (!email.value.trim()) {
-      console.warn('[WARNING] Email vide détecté');
       errorMessage.value = "Veuillez entrer un email";
       return;
     }
     
     if (!validateEmail(email.value)) {
-      console.warn('[WARNING] Format email invalide:', email.value);
       errorMessage.value = "Format d'email invalide";
       return;
     }
 
     isLoading.value = true;
-    console.log('[DEBUG] Tentative d\'envoi à:', email.value.trim());
     
-    const response = await sendResetCode(email.value.trim());
-    console.log('[DEBUG] Réponse du serveur:', JSON.stringify(response, null, 2));
-    
-    if (response.status.code === 200) {
-      console.log('[SUCCESS] Code envoyé avec succès');
-      successMessage.value = "Code envoyé avec succès ! Vérifiez votre email.";
-      
-      setTimeout(() => {
-        console.log('[NAVIGATION] Redirection vers /reset');
-        router.push({
-          path: '/reset',
-          query: { email: email.value }
-        });
-      }, 2000);
+    const response = await axios.post(
+      `${API_BASE_URL}/fr/api/private/user/reset`,
+      { email: email.value.trim() },
+      {
+        timeout: 10000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    console.log('Réponse API:', response.data);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Code de réinitialisation (simulé):', response.data.resetCode);
+      successMessage.value = `Code de réinitialisation (simulé) : ${response.data.resetCode}`;
     } else {
-      console.warn('[WARNING] Réponse inattendue:', response);
+      successMessage.value = "Un code de réinitialisation a été envoyé à votre email.";
     }
-    
+
+    startResendTimer();
+    setTimeout(() => {
+      router.push({
+        path: '/reset/check',
+        query: { email: email.value }
+      });
+    }, 2000);
+
   } catch (error) {
-    console.error('[ERROR] Erreur complète:', {
-      message: error.message,
+    console.error('Erreur détaillée:', {
+      config: error.config,
       response: error.response,
-      stack: error.stack
+      message: error.message
     });
     
-    errorMessage.value = error.response?.data?.message 
-      || "Échec de l'envoi du code. Veuillez réessayer.";
+    if (error.code === 'ECONNABORTED') {
+      errorMessage.value = "Le serveur ne répond pas. Veuillez réessayer plus tard.";
+    } else if (!error.response) {
+      errorMessage.value = "Problème de connexion. Vérifiez votre internet.";
+    } else {
+      const apiErrorCode = error.response?.data?.status?.code;
+      
+      switch(apiErrorCode) {
+        case 205:
+          errorMessage.value = "Format d'email invalide";
+          break;
+        case 500:
+          errorMessage.value = "Aucun compte associé à cet email";
+          break;
+        default:
+          errorMessage.value = "Erreur technique. Contactez le support.";
+      }
+    }
+    
   } finally {
     isLoading.value = false;
-    console.log('[DEBUG] Fin de la procédure (loading désactivé)');
   }
 };
 </script>
 
 <style scoped>
 .ion-padding {
---background: white;
+  --background: white;
 }
 .signup-container {
-text-align: center;
-max-width: 800px;
-margin: auto;
+  text-align: center;
+  max-width: 600px;
+  margin: auto;
 }
 .logo {
-width: 150px;
-margin-bottom: 10px;
+  width: 150px;
+  margin-bottom: 10px;
 }
 
 h1 {
-margin-top: 180px;
-font-size: 40px;
-color: #47463d;
+  font-size: 40px;
+  color: #47463d;
 }
 
 p {
-font-size: 15px;
-color: #47463d;
+  font-size: 15px;
+  color: #47463d;
 }
 
 .list {
-background: transparent;
+  background: transparent;
 }
 .item {
---background: #dfc925;
---border-radius: 10px;
---border-color: #47463d;
---padding-start: 15px;
---inner-padding-end: 15px;
-margin-bottom: 20px;
-margin-top: 15px;
+  --background: #dfc925;
+  --border-radius: 10px;
+  --border-color: #47463d;
+  --padding-start: 15px;
+  --inner-padding-end: 15px;
+  margin-bottom: 20px;
+  margin-top: 15px;
 }
 
 .buttonContainer {
-margin-top: 50px;
-display: flex;
-justify-content: center;
+  margin-top: 50px;
+  display: flex;
+  justify-content: center;
 }
 
 .signupBtn {
---background: #47463d;
---color: white;
---border-radius: 8px;
-height: 35px;
-width: 150px;
+  --background: #47463d;
+  --color: white;
+  --border-radius: 8px;
+  height: 35px;
+  width: 150px;
 }
 
 .error {
-color: red;
-font-size: 14px;
-margin-top: 10px;
+  color: red;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.success {
+  color: green;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.info {
+  color: #47463d;
+  font-size: 14px;
+  margin-top: 10px;
 }
 </style>

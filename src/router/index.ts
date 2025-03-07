@@ -31,8 +31,20 @@ const routes: Array<RouteRecordRaw> = [
   component: VerificationPage
   },
   {
-    path: '/reset',
-    component:ForgetPassword
+  path: '/reset',
+  component:ForgetPassword
+  },
+  {
+  path: '/veriftlph',
+  component:veriftelephone
+  },
+  {
+  path: '/reset/check', 
+  component: ResetCheck,
+  },
+  {
+  path: '/reset/check/new', 
+  component: Newpassword,
   },
   {
     path: '/create-company',

@@ -3,5 +3,11 @@
   "integrations": {
     "capacitor": {}
   },
-  "type": "vue-vite"
+  "type": "vue-vite",
+  "proxies": [
+    {
+      "path": "/fr/api",
+      "proxyUrl": "https://preprod-api.iberis.io/fr/api"
+    }
+  ]
 }

@@ -12,7 +12,6 @@ export default defineConfig({
     legacy()
   ],
   
-
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -22,5 +21,4 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom'
   }
-  
 })

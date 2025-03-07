@@ -30,9 +30,9 @@
   
   
 <script setup>
+    import { verifyEmail, resendVerifyCode } from "@/services/authentification"; 
     import { ref, computed, onMounted } from "vue";
     import { useRoute,useRouter } from "vue-router";
-    import axios from "axios";
 
     const code = ref(["", "", "", ""]);
     const inputs = ref([]);
@@ -65,10 +65,8 @@
       try {
         const verificationCode = code.value.join("");
 
-        const response = await axios.post("https://preprod-api.iberis.io/fr/api/private/user/email/validate", {
-          email: email.value,
-          code: verificationCode,
-        });
+        const response = await verifyEmail(email.value, verificationCode);
+
 
         console.log("Verification Successful:", response.data);
         router.push("/login"); 
@@ -78,7 +76,6 @@
       }
     };
     const resendCode = async () => {
-      console.log(" Resend button clicked!");
       console.log(" hashedUserId:", hashedUserId.value); 
       try {
       if (!hashedUserId.value) {
@@ -86,9 +83,8 @@
         return;
       }
 
-      const response = await axios.post(
-        `https://preprod-api.iberis.io/fr/api/private/user/email/pending/${hashedUserId.value}`
-      );
+      const response = await resendVerifyCode(hashedUserId.value);
+
 
       console.log(" Code Resent:", response.data.data?.user?.validation);
     } catch (error) {

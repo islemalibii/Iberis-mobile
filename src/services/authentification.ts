@@ -33,13 +33,15 @@ export const login = async (credentials: LoginCredentials) => {
   return api.post('/login', credentials);
 };
 
-export const sendVerificationEmail = async (email: string) => {
-  return api.post('/', { email });
+export const verifyEmail = async (email: string, code: string) => {
+  return api.post('/email/validate', { email, code });
 };
 
-export const verifyCode = async (email: string, code: string) => {
-  return api.post('/', { email, code });
+export const resendVerifyCode = async (hashedUserId: string) => {
+  return api.post(`/email/pending/${hashedUserId}`);
 };
+
+
 export const sendResetCode = async (email: string) => {
   try {
     // Génération d'un code à 4 chiffres

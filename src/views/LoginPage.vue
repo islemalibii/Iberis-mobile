@@ -56,6 +56,7 @@
   </ion-page>
 </template>
 <script setup lang="ts">
+import { Preferences } from '@capacitor/preferences';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { login } from '@/services/authentification';
@@ -68,6 +69,7 @@ const emailError = ref('');
 const passwordError = ref('');
 
 
+ 
 const handleLogin = async () => {
   const trimmedEmail = email.value.trim();
   const trimmedPassword = password.value.trim();
@@ -90,8 +92,8 @@ const handleLogin = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      
       },
+      credentials: 'include', 
       body: JSON.stringify({
         email: trimmedEmail,
         password: trimmedPassword,
@@ -99,35 +101,60 @@ const handleLogin = async () => {
     });
 
     const data = await response.json(); 
-    
-    
+    console.log("Login Response:", data);
 
-    if (response.status === 401) {
-      errorMessage.value = 'Identifiants incorrects ou accès non autorisé.';
-      return;
-    }
-
-    if (data.status && data.status.code === 402) {
-      errorMessage.value = "Veuillez valider votre adresse e-mail avant de vous connecter.";
-      return;
-    }
-
-    if (data.status && data.status.code === 203) {
-      if (data.token) {
-      localStorage.setItem("access_token", data.token);
-      console.log("Login successful, token saved.");
-      return data.token;
+    if (!response.ok) {
+      console.error('Login failed:', response.status);
+      if (response.status === 401) {
+        errorMessage.value = 'Invalid credentials.';
+        return;
       }
-      console.log("Login successful:", data);
-      console.log("create company");
-      router.push('/create-company'); 
-    } 
+      throw new Error('Login failed');
+    }
+
+  
+    if (data.status && data.status.code === 402) {
+      errorMessage.value = "Email validation required.";
+      return;
+    }
+
+
+    let authToken = data.token || null;
+    if (!authToken) {
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'token') {
+          authToken = value;
+          break;
+        }
+      }
+    }
+
+    if (authToken) {
+      await Preferences.set({ key: 'auth_token', value: authToken });
+      console.log("Token saved successfully in storage:", authToken);
+      
+      //const { value: storedToken } = await Preferences.get({ key: 'auth_token' });
+      //console.log("Verified stored token:", storedToken);
+    } else {
+      console.warn("No token found in cookies.");
+    }
+                        
+    if (data.status?.code === 203) {
+        console.warn('Server message:', data.status.message);
+        router.push('/create-company');
+      } else {
+        router.push('/home');
+      }
 
   } catch (error) {
     console.error("Login failed:", error);
     errorMessage.value = 'Échec de la connexion. Veuillez réessayer.';
   }
 };
+
+
 
 
 
@@ -139,7 +166,7 @@ const handleGoogleSignUp = async (response: any) => {
 
 
   try {
-    const res = await login({ idToken,
+    const res = await login({ //idToken,
        email: userPayload.email,
        password: "google_oauth" });
 
@@ -159,7 +186,8 @@ const handleGoogleSignUp = async (response: any) => {
 };
 
 
-const handleFacebookLogin = (response) => {
+
+const handleFacebookLogin = (response : any) => {
   console.log("Facebook login response:", response);
   if (response.status === 'connected') {
     const { accessToken } = response.authResponse;
@@ -192,7 +220,6 @@ const handleFacebookLogin = (response) => {
     errorMessage.value = 'Facebook login failed. Please try again.';
   }
 };
-
 
 onMounted(() => {
   const googleScript = document.createElement("script");

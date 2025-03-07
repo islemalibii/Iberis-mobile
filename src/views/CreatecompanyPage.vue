@@ -11,19 +11,20 @@
                 <div class="input-group">
                     <ion-label class="label">Company's name</ion-label>
                     <ion-item class="custom-input">
-                        <ion-input :value="name" @ionInput="name=$event.target.value" placeholder="GOOGLE ?"></ion-input>
-                    </ion-item>
+                        <ion-input v-model="form.companyName" placeholder="GOOGLE ?"></ion-input>
+                   </ion-item>
                 </div>
             
                 <div class="input-group">
                     <ion-label class="label">Activity</ion-label>
                     <ion-item class="custom-input">
-                        <ion-select @ionChange="handleActivityChange" placeholder="Select an activity">
-                            <ion-select-option 
-                                v-for="(activity, index) in activities" 
-                                :key="index" 
-                                :value="activity.hashed_id">
-                                {{ activity.title }}
+                        <ion-select v-model="form.activity" @ionChange="handleActivityChange" placeholder="Select an activity">
+                            <ion-select-option
+                            v-for="(activity, index) in activities"
+                            :key="index"
+                            :value="activity.hashed_id"
+                            >
+                            {{ activity.title }}
                             </ion-select-option>
                         </ion-select>
                     </ion-item>
@@ -32,7 +33,7 @@
                 <div class="input-group">
                     <ion-label class="label">Phone</ion-label>
                     <ion-item class="custom-input">
-                        <ion-input :value="phone" @ionInput="phone=$event.target.value" placeholder="71559882" readonly></ion-input>
+                        <ion-input v-model="form.phone" placeholder="71559882" readonly></ion-input>
                     </ion-item>
                 </div>
 
@@ -46,25 +47,25 @@
                 <div class="input-group">
                     <ion-label class="label">Addresse</ion-label>
                     <ion-item class="custom-input">
-                        <ion-input :value="adresse" @ionInput="adresse=$event.target.value" placeholder="1 , liberty road"></ion-input>
+                        <ion-input v-model="form.address" placeholder="1, liberty road"></ion-input>
                     </ion-item>
                 </div>
                 <div class="input-group">
                     <ion-label class="label">Governorate</ion-label>
                     <ion-item class="custom-input">
-                        <ion-input :value="governorate" @ionInput="governorate=$event.target.value" placeholder="Tunis"></ion-input>
+                        <ion-input v-model="form.governorate" placeholder="Tunis"></ion-input>
                     </ion-item>
                 </div>
                 <div class="input-group">
                     <ion-label class="label">Code postal</ion-label>
                     <ion-item class="custom-input">
-                        <ion-input :value="codepostal" @ionInput="codepostal=$event.target.value" placeholder="2090"></ion-input>
+                        <ion-input v-model="form.postalCode" placeholder="2090"></ion-input>
                     </ion-item>
                 </div>
                 <div class="input-group">
                     <ion-label class="label">Country</ion-label>
                     <ion-item class="custom-input">
-                        <ion-select :value="country" @ionInput="country=$event.target.value" placeholder="Tunisie">
+                        <ion-select v-model="form.country" @ionChange="form.country = $event.detail.value" placeholder="Tunisie">                            
                             <ion-select-option value="art">qatar</ion-select-option>
                             <ion-select-option value="tech">alregie</ion-select-option>
                             <ion-select-option value="commerce">russia</ion-select-option>
@@ -81,24 +82,23 @@
             <div v-if="page === 3">
                 <div class="input-group">
                     <ion-label class="label">PDF language</ion-label>
-                    <ion-item :value="language" @ionInput="language=$event.target.value" class="custom-input">
-                        <ion-select placeholder="english">
-                            <ion-select-option value="art">english</ion-select-option>
-                            <ion-select-option value="tech">arabic</ion-select-option>
-                            <ion-select-option value="commerce">french</ion-select-option>
-                        </ion-select>
-                    </ion-item>
+                        <ion-item class="custom-input"></ion-item>
+                            <ion-select v-model="form.language" @ionChange="form.language = $event.detail.value" placeholder="English">    
+                                <ion-select-option value="art">english</ion-select-option>
+                                <ion-select-option value="tech">arabic</ion-select-option>
+                                <ion-select-option value="commerce">french</ion-select-option>
+                            </ion-select>
                 </div>
                 <div class="input-group">
                     <ion-label class="label">Tax identification number</ion-label>
                     <ion-item class="custom-input">
-                        <ion-input :value="tax" @ionInput="tax=$event.target.value" placeholder="0000000/L/A/M/000"></ion-input>
+                        <ion-input v-model="form.tax" placeholder="0000000/L/A/M/000"></ion-input>
                     </ion-item>
                 </div>
                 <div class="input-group">
                     <ion-label class="label">Exercice</ion-label>
                     <ion-item class="custom-input">
-                        <ion-select :value="exercice" @ionInput="exercice=$event.target.value" placeholder="January - December">
+                        <ion-select v-model="form.exercice" @ionChange="form.exercice = $event.detail.value" placeholder="January - December">                            
                             <ion-select-option value="art">January - December</ion-select-option>
                             <ion-select-option value="art">January - December</ion-select-option>
                             <ion-select-option value="art">January - December</ion-select-option>
@@ -108,7 +108,7 @@
                 <div class="input-group">
                     <ion-label class="label">Main currency</ion-label>
                     <ion-item class="custom-input">
-                        <ion-select :value="currency" @ionInput="currency=$event.target.value" placeholder="Dinar(s) tunisien">
+                        <ion-select v-model="form.currency" @ionChange="form.currency = $event.detail.value" placeholder="Dinar(s) Tunisien">
                             <ion-select-option value="art">Dinar(s) tunisien</ion-select-option>
                             <ion-select-option value="tech">dirham</ion-select-option>
                             <ion-select-option value="tech">dirham</ion-select-option>
@@ -126,87 +126,122 @@
     </ion-page>
   </template>
 
-<script>
+<script setup lang="ts">
+import { Preferences } from '@capacitor/preferences';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 
-export default {
-  data() {
-    return {
-      page: 1,
-      form: {
-        companyName: "",
-        activity: "",
-        phone: "",
-        address: "",
-        governorate: "",
-        postalCode: "",
-        country: "",
-      },
-      activities: [],
-    };
-  },
+interface Activity {
+  hashed_id: string;
+  title: string;
+}
+interface FormData {
+  companyName: string;
+  activity: string;
+  phone: string;
+  address: string;
+  governorate: string;
+  postalCode: string;
+  country: string;
+  language: string;
+  tax: string;
+  exercice: string;
+  currency: string;
+}
+const router = useRouter();
+const page = ref(1);
+const form = ref<FormData>({
+  companyName: "",
+  activity: "",
+  phone: "",
+  address: "",
+  governorate: "",
+  postalCode: "",
+  country: "",
+  language: "",
+  tax: "",
+  exercice: "",
+  currency: "",
+});
+const activities = ref<Activity[]>([]);
 
-  methods: {
-    async fetchActivities() {
-        let token = localStorage.getItem("access_token");
-        if (!token) {
-            console.warn("No token found. Trying to log in...");
-            token = await this.loginAndGetToken();
-        }
+const fetchActivities = async () => {
+  console.log("Fetching activities...");
+  try {
 
-        if (!token) {
-            console.error("Authentication failed. Cannot fetch activities.");
-            return;
-        }
+    const { value: token } = await Preferences.get({ key: 'auth_token' });
+    console.log("Retrieved Token:", token);
 
-        try {
-            const response = await fetch("https://preprod-api.iberis.io/fr/api/private/general/activities", {
-            headers: { "Authorization": `Bearer ${token}` }
-            });
-
-            const data = await response.json();
-            console.log("Full API Response:", data);
-
-            if (data?.data?.activities) {
-            this.activities = data.data.activities;
-            console.log("Fetched Activities:", this.activities);
-            } else {
-            console.warn("No activities found.");
-            }
-        } catch (error) {
-            console.error("Error fetching activities:", error);
-        }
+    if (!token) {
+      console.error("No token found");
+      router.push('/login');
+      return;
+    }
+    const response = await fetch(
+      "https://preprod-api.iberis.io/fr/api/private/general/activities",
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, 
         },
+        credentials: 'include',
+      }
+    );
 
-    handleActivityChange(event) {
-        console.log("Raw Event Object:", event);
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("Response Text:", text);
+    }
 
-        if (!event || !event.detail || !event.detail.value) {
-            console.error("Invalid selection event. Check if activities are loaded.");
-            return;
-        }
 
-        this.form.activity = event.detail.value;
-        console.log("Selected Activity:", this.form.activity);
-    },
+    const data = await response.json();
     
-    nextPage1() {
-      this.page = 2;
-    },
-    
-    nextPage2() {
-      this.page = 3;
-    },
-    
-    submitForm() {
-      alert("Form submitted!");
-      console.log(this.form);
-    },
-  },
-
-  mounted() {
-    this.fetchActivities();
-  },
+    if (data?.data?.activities?.length) {
+      activities.value = data.data.activities as Activity[];
+      console.log("Fetched Activities:", activities.value);
+    } else if (data?.activities?.length) {
+      activities.value = data.activities as Activity[];
+      console.log("Fetched Activities from root:", activities.value);
+    } else {
+      console.warn("No activities found in response:", data);
+    }
+  } catch (error) {
+    console.error("Error fetching activities:", error);
+    router.push('/login');
+  }
 };
+
+
+const handleActivityChange = (event: CustomEvent) => {
+  console.log("Raw Event Object:", event);
+
+  if (!event || !event.detail || !event.detail.value) {
+    console.error("Invalid selection event. Check if activities are loaded.");
+    return;
+  }
+
+  form.value.activity = event.detail.value;
+  console.log("Selected Activity:", form.value.activity);
+};
+
+const nextPage1 = () => {
+  page.value = 2;
+};
+
+const nextPage2 = () => {
+  page.value = 3;
+};
+const submitForm = () => {
+  alert("Form submitted!");
+  console.log(form.value);
+};
+
+onMounted(async () => {
+  console.log("Component mounted, calling fetchActivities...");
+  await fetchActivities();
+});
+
 </script>
 
 

@@ -3,6 +3,7 @@
     <ion-content>
       <div class="container">
         <div class="content-wrapper">
+          <!-- Logo et titre -->
           <div class="image-container">
             <a href="/home">
               <img src="../assets/logo-iberis.png" alt="iberisLogo" class="logo" />
@@ -14,30 +15,43 @@
             You don't have an account? <a href="/signup">Create an account</a>
           </p>
 
+          <!-- Boutons sociaux -->
           <div class="socialButtons">
             <div class="google-button-container">
               <div id="google-button"></div>
             </div>
-
             <div class="facebook-button-container">
               <div id="facebook-button">
-                <div
-                  class="fb-login-button" data-size="large" data-auto-logout-link="false" data-use-continue-as="true"></div>
+                <div class="fb-login-button" data-size="large" data-auto-logout-link="false" data-use-continue-as="true"></div>
               </div>
             </div>
           </div>
 
           <p class="or">Or</p>
+
+          <!-- Formulaire de connexion -->
           <ion-list class="list">
             <ion-item class="item">
               <ion-img src="/src/assets/email.png" class="input-icon"></ion-img>
-              <ion-input type="email" placeholder="Email" :value="email" @ionInput="email = $event.target.value.trim()" class="input-field"></ion-input>
+              <ion-input 
+                type="email" 
+                placeholder="Email" 
+                v-model="email" 
+                @ionInput="email = $event.target.value"
+                class="input-field"
+              ></ion-input>
             </ion-item>
             <p v-if="emailError" class="error">{{ emailError }}</p>
 
             <ion-item class="item">
               <ion-img src="/src/assets/cadenas.png" class="input-icon"></ion-img>
-              <ion-input type="password" placeholder="Password" :value="password" @ionInput="password = $event.target.value.trim()" class="input-field"></ion-input>
+              <ion-input 
+                type="password" 
+                placeholder="Password" 
+                v-model="password" 
+                @ionInput="password = $event.target.value"
+                class="input-field"
+              ></ion-input>
             </ion-item>
             <p v-if="passwordError" class="error">{{ passwordError }}</p>
           </ion-list>
@@ -55,208 +69,58 @@
     </ion-content>
   </ion-page>
 </template>
+
 <script setup lang="ts">
-import { Preferences } from '@capacitor/preferences';
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { login } from '@/services/authentification';
+import { onMounted } from 'vue';
+import { LoginController } from '@/controllers/LoginController';
 
-const router = useRouter();
-const email = ref('');
-const password = ref('');
-const errorMessage = ref('');
-const emailError = ref('');
-const passwordError = ref('');
+const {
+  email,
+  password,
+  errorMessage,
+  emailError,
+  passwordError,
+  handleLogin,
+  handleGoogleSignUp,
+  handleFacebookLogin
+} = LoginController();
 
-
- 
-const handleLogin = async () => {
-  const trimmedEmail = email.value.trim();
-  const trimmedPassword = password.value.trim();
-
-  emailError.value = '';
-  passwordError.value = '';
-  errorMessage.value = '';
-
-  if (!trimmedEmail) {
-    emailError.value = 'Email field cannot be empty!';
-    return;
-  }
-  if (!trimmedPassword) {
-    passwordError.value = 'Password field cannot be empty!';
-    return;
-  }
-
-  try {
-    const response = await fetch('https://preprod-api.iberis.io/fr/api/private/user/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', 
-      body: JSON.stringify({
-        email: trimmedEmail,
-        password: trimmedPassword,
-      }),
-    });
-
-    const data = await response.json(); 
-    console.log("Login Response:", data);
-
-    if (!response.ok) {
-      console.error('Login failed:', response.status);
-      if (response.status === 401) {
-        errorMessage.value = 'Invalid credentials.';
-        return;
-      }
-      throw new Error('Login failed');
-    }
-
-  
-    if (data.status && data.status.code === 402) {
-      errorMessage.value = "Email validation required.";
-      return;
-    }
-
-
-    let authToken = data.token || null;
-    if (!authToken) {
-      const cookies = document.cookie.split(';');
-      for (const cookie of cookies) {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'token') {
-          authToken = value;
-          break;
-        }
-      }
-    }
-
-    if (authToken) {
-      await Preferences.set({ key: 'auth_token', value: authToken });
-      console.log("Token saved successfully in storage:", authToken);
-      
-      //const { value: storedToken } = await Preferences.get({ key: 'auth_token' });
-      //console.log("Verified stored token:", storedToken);
-    } else {
-      console.warn("No token found in cookies.");
-    }
-                        
-    if (data.status?.code === 203) {
-        console.warn('Server message:', data.status.message);
-        router.push('/create-company');
-      } else {
-        router.push('/home');
-      }
-
-  } catch (error) {
-    console.error("Login failed:", error);
-    errorMessage.value = 'Échec de la connexion. Veuillez réessayer.';
-  }
-};
-
-
-
-
-
-const handleGoogleSignUp = async (response: any) => {
-  console.log("Google Sign-In Response:", response);
-  const idToken = response.credential;
-
-  const userPayload = JSON.parse(atob(idToken.split(".")[1])); 
-
-
-  try {
-    const res = await login({ //idToken,
-       email: userPayload.email,
-       password: "google_oauth" });
-
-    console.log(" Backend Response:", res.data);
-
-    if (res.data.userExists) {
-      console.log("🔑 Token Received:", res.data.token);
-      localStorage.setItem("token", res.data.token); 
-      router.push("/home"); 
-    } else {
-      console.warn("⚠️ User does not exist. Redirecting to signup.");
-      router.push("/signup"); 
-    }
-  }catch (error) {
-    console.error(" Google Login Failed:", error);
-    }
-};
-
-
-
-const handleFacebookLogin = (response : any) => {
-  console.log("Facebook login response:", response);
-  if (response.status === 'connected') {
-    const { accessToken } = response.authResponse;
-    if (!accessToken) {
-      console.error("Access token is missing");
-      errorMessage.value = 'Access token is missing. Please try again.';
-      return;
-    }
-
-    fetch('https://preprod-api.iberis.io/fr/api/private/user/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status?.code === 200) {
-          router.push('/home');
-        } else {
-          errorMessage.value = data.status?.message || 'Facebook login failed. Please try again.';
-        }
-      })
-      
-      .catch(err => {
-        console.error('Error with Facebook login:', err);
-        errorMessage.value = 'Facebook login failed. Please try again.';
-      });
-  } else {
-    console.error('Facebook login failed:', response);
-    errorMessage.value = 'Facebook login failed. Please try again.';
-  }
-};
-
+// Initialisation des scripts sociaux
 onMounted(() => {
+  // Google
   const googleScript = document.createElement("script");
   googleScript.src = "https://accounts.google.com/gsi/client";
   googleScript.async = true;
   googleScript.onload = () => {
-    if (!document.getElementById("google-button")?.hasChildNodes()) {
-      window.google?.accounts.id.initialize({
-        client_id: "543531980890-o7btiuq1iod2423htc4c3av4i6l4j28h.apps.googleusercontent.com",
-        callback: handleGoogleSignUp,
-        ux_mode: "popup",
-      });
-
-      window.google.accounts.id.renderButton(
-        document.getElementById("google-button"),
-        { theme: "outline", size: "large", width: "220" }
-      );
-    }
+    window.google?.accounts.id.initialize({
+      client_id: "543531980890-o7btiuq1iod2423htc4c3av4i6l4j28h.apps.googleusercontent.com",
+      callback: handleGoogleSignUp,
+      ux_mode: "popup",
+    });
+    window.google.accounts.id.renderButton(
+      document.getElementById("google-button"),
+      { theme: "outline", size: "large", width: "220" }
+    );
   };
   document.head.appendChild(googleScript);
 
+  // Facebook
   const facebookScript = document.createElement('script');
   facebookScript.src = 'https://connect.facebook.net/en_US/sdk.js';
   facebookScript.async = true;
   facebookScript.onload = () => {
     window.FB.init({
-      appId: '507777845320852', 
+      appId: '507777845320852',
       cookie: true,
       xfbml: true,
       version: 'v15.0',
     });
-
     window.FB.Event.subscribe('auth.statusChange', handleFacebookLogin);
   };
   document.head.appendChild(facebookScript);
 });
 </script>
+
 
 <style scoped>
 ion-content {
@@ -386,8 +250,6 @@ ion-content {
   transform: scale(0.95); 
   width: 100%;
 }
-
-
 .or {
   margin: 10px 0;
   font-weight: bold;

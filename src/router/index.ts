@@ -6,9 +6,16 @@ import SignupPage from '@/views/SignupPage.vue';
 import VerificationPage from '@/views/VerificationPage.vue';
 import ForgetPassword from '@/views/ForgetPassword.vue';
 import CreatecompanyPage from '@/views/CreatecompanyPage.vue';
-import veriftelephone from '@/views/veriftelephone.vue';
+import Veriftelephone from '@/views/Veriftelephone.vue';
 import ResetCheck from '@/views/ResetCheck.vue';
-import Newpassword from '@/views/newpassword.vue';
+import Newpassword from '@/views/Newpassword.vue';
+import InvoicesPage from '@/views/InvoicesPage.vue';
+import CreateinvoicePage from '@/views/CreateinvoicePage.vue';
+import tajrouba from  '@/views/tajrouba.vue'
+import ModifyinvoicePage from '@/views/ModifyinvoicePage.vue';
+import PaymentsPage from '@/views/PaymentsPage.vue';
+import CreatepaymentPage from '@/views/CreatepaymentPage.vue';
+import ModifypaymentPage from '@/views/ModifypaymentPage.vue';
 
 
 
@@ -41,7 +48,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
   path: '/veriftlph',
-  component:veriftelephone
+  component:Veriftelephone
   },
   {
   path: '/reset/check', 
@@ -54,6 +61,34 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/create-company',
     component:CreatecompanyPage
+  },
+  {
+    path: '/invoices',
+    component:InvoicesPage
+  },
+  {
+    path: '/create-invoice',
+    component:CreateinvoicePage
+  },
+  {
+    path: '/tajrouba',
+    component:tajrouba
+  },
+  {
+    path: '/modify-invoice',
+    component:ModifyinvoicePage
+  },
+  {
+    path: '/payments',
+    component:PaymentsPage
+  },
+  {
+    path: '/create-payment',
+    component:CreatepaymentPage
+  },
+  {
+    path: '/modify-payment',
+    component:ModifypaymentPage
   },
 ]
 

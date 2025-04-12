@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { login, type ApiResponseData } from '@/services/authentification';
+import { login } from '@/services/authentification';
 import { Preferences } from '@capacitor/preferences';
 
 export const LoginController = () => {
@@ -12,10 +12,8 @@ export const LoginController = () => {
   const passwordError = ref('');
   const isLoading = ref(false);
 
-  // Stockage du token
   const storeAuthToken = async (token: string): Promise<void> => {
     try {
-      localStorage.setItem('auth_token', token);
       await Preferences.set({ key: 'auth_token', value: token });
     } catch (error) {
       console.error('Token storage error:', error);
@@ -23,7 +21,6 @@ export const LoginController = () => {
     }
   };
 
-  // Validation du formulaire
   const validateForm = (): boolean => {
     emailError.value = '';
     passwordError.value = '';
@@ -50,7 +47,6 @@ export const LoginController = () => {
     return isValid;
   };
 
-  // Gestion du login
   const handleLogin = async (): Promise<void> => {
     if (!validateForm()) return;
     
@@ -64,13 +60,12 @@ export const LoginController = () => {
       });
 
       const responseData = response.data;
-
-      // Gestion des différents cas de réponse
       switch (responseData.status?.code) {
         case 200: 
           if (responseData.data?.token) {
             await storeAuthToken(responseData.data.token);
-            router.push('/clients');
+            console.log("the token : ", responseData.data.token);
+            router.push('/invoices');
           } else {
             throw new Error('Authentication token missing in response');
           }
@@ -82,16 +77,16 @@ export const LoginController = () => {
         case 203: 
           if (responseData.data?.token) {
             await storeAuthToken(responseData.data.token);
+            console.log("the token : ", responseData.data.token);
             router.push('/create-company');
           }
           break;
 
         case 401: 
           errorMessage.value = 'Invalid credentials';
-
           break;
 
-        case 402: // Validation email requise
+        case 402: 
           if (responseData.data?.user?.hashed_id) {
             router.push({
               path: '/verify',
@@ -105,7 +100,7 @@ export const LoginController = () => {
           }
           break;
 
-        case 406: // Utilisateur banni
+        case 406:
           errorMessage.value = 'Your account has been suspended';
           break;
 
@@ -125,7 +120,6 @@ export const LoginController = () => {
     }
   };
 
-  // Connexion Google
   const handleGoogleSignUp = async (response: any) => {
     try {
       const idToken = response.credential;

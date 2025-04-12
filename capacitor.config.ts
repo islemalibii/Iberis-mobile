@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: 'iberis',
+  appId: 'com.iberis.mobile',
+  appName: 'iberis-Mobile',
   webDir: 'dist'
 };
 

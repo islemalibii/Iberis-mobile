@@ -8,7 +8,6 @@
           <h1>Vérification du code</h1>
           <p>Entrez le code reçu à l'adresse {{ email }}</p>
   
-          <!-- Inputs pour le code à 4 chiffres -->
           <div class="code-inputs">
             <input
               v-for="(digit, index) in 4"
@@ -66,118 +65,21 @@
     IonIcon,
   } from "@ionic/vue";
   import { alertCircleOutline } from "ionicons/icons";
-  
-  const API_BASE_URL = "https://api.iberis.io";
-  const router = useRouter();
-  const route = useRoute();
-  const email = ref(route.query.email || "");
-  const code = ref(Array(4).fill("")); // Tableau pour stocker les 4 chiffres du code
-  const errorMessage = ref("");
-  const isLoading = ref(false);
-  const inputs = ref([]); // Références des inputs
-  
-  // Vérifie si le code est complet (4 chiffres)
-  const isCodeComplete = computed(() => {
-    return code.value.every((digit) => digit.length === 1);
-  });
-  
-  // Gestion de la saisie dans les inputs
-  const handleInput = (index, event) => {
-    const value = event.target.value;
-    if (value.length === 1 && index < 3) {
-      // Passe à l'input suivant
-      inputs.value[index + 1]?.focus();
-    } else if (value.length === 1 && index === 3) {
-      // Si c'est la dernière case, on reste dessus
-      inputs.value[index]?.blur();
-    }
-  };
-  
-  // Gestion de la suppression avec la touche backspace
-  const handleBackspace = (index, event) => {
-    if (event.target.value.length === 0 && index > 0) {
-      // Retourne à l'input précédent
-      inputs.value[index - 1]?.focus();
-    }
-  };
-  
-  // Gestion du collage (paste) du code
-  const handlePaste = (event) => {
-    event.preventDefault(); // Empêche le comportement par défaut
-    const pasteData = event.clipboardData.getData("text").trim(); // Récupère le texte collé
-    if (/^\d{4}$/.test(pasteData)) {
-      // Vérifie si le texte collé est un code à 4 chiffres
-      for (let i = 0; i < 4; i++) {
-        code.value[i] = pasteData[i]; // Répartit les chiffres dans les cases
-      }
-      inputs.value[3]?.focus(); // Focus sur la dernière case
-    } else {
-      errorMessage.value = "Le code collé doit contenir exactement 4 chiffres.";
-    }
-  };
-  
-  const verifyCode = async () => {
-    try {
-      if (!isCodeComplete.value) {
-        errorMessage.value = "Veuillez entrer un code valide à 4 chiffres";
-        return;
-      }
-  
-      isLoading.value = true;
-      const fullCode = code.value.join(""); // Concatène les 4 chiffres
-  
-      const response = await axios.post(
-        `${API_BASE_URL}/fr/api/private/user/reset/check`,
-        { token: fullCode }
-      );
-  
-      if (response.data.status?.code === 200) {
-        router.push({
-          path: "/reset/check/new",
-          query: { email: email.value, token: fullCode },
-        });
-      } else {
-        errorMessage.value = response.data.status?.message || "Code invalide";
-      }
-    } catch (error) {
-      console.error("Erreur lors de la vérification du code :", error);
-      errorMessage.value =
-        error.response?.data?.message || "Erreur de vérification";
-    } finally {
-      isLoading.value = false;
-    }
-  };
-  
-  // Renvoi du code
-  const resendCode = async () => {
-    try {
-      isLoading.value = true;
-      const response = await axios.post(
-        `${API_BASE_URL}/fr/api/private/user/reset`,
-        { email: email.value }
-      );
-  
-      if (response.data.status?.code === 200) {
-        errorMessage.value = "Un nouveau code a été envoyé à votre email.";
-      } else {
-        errorMessage.value =
-          response.data.status?.message || "Erreur lors du renvoi du code";
-      }
-    } catch (error) {
-      console.error("Erreur lors du renvoi du code :", error);
-      errorMessage.value =
-        error.response?.data?.message || "Erreur lors du renvoi du code";
-    } finally {
-      isLoading.value = false;
-    }
-  };
-  
-  // Initialisation des références des inputs
-  onMounted(() => {
-    inputs.value = Array.from({ length: 4 }, (_, i) =>
-      document.querySelector(`input[ref="input${i}"]`)
-    );
-  });
+  import { useResetCheckController } from '@/controllers/Resetcheck';
+
+const { 
+  email, 
+  code, 
+  errorMessage, 
+  isLoading, 
+  inputs, 
+  isCodeComplete, 
+  handleInput, 
+  handleBackspace, 
+  handlePaste, 
+  verifyCode, 
+  resendCode 
+} = useResetCheckController();
   </script>
   
   <style scoped>

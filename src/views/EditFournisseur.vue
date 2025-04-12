@@ -8,14 +8,14 @@
           </div>
   
           <div class="content-wrapper">
-            <h1 class="heading">Nouveau Fournisseur</h1>
+            <h1 class="heading">Modifier un fournisseur</h1>
   
-            <!-- Formulaire pour ajouter un fournisseur -->
-            <form @submit.prevent="submitSupplier">
+            <!-- Formulaire pour modifier un fournisseur -->
+            <form @submit.prevent="updateSupplier">
               <!-- Informations générales -->
               <ion-accordion-group>
                 <ion-accordion value="generalInfo">
-                  <ion-item slot="header" class="accordion-header">
+                  <ion-item slot="header" class="accordion-header yellow">
                     <ion-icon :icon="person" slot="start"></ion-icon>
                     <ion-label>Informations générales</ion-label>
                   </ion-item>
@@ -68,7 +68,7 @@
               <!-- Informations professionnelles -->
               <ion-accordion-group>
                 <ion-accordion value="professionalInfo">
-                  <ion-item slot="header" class="accordion-header">
+                  <ion-item slot="header" class="accordion-header yellow">
                     <ion-icon :icon="briefcase" slot="start"></ion-icon>
                     <ion-label>Informations professionnelles</ion-label>
                   </ion-item>
@@ -113,7 +113,7 @@
               <!-- Remarques -->
               <ion-accordion-group>
                 <ion-accordion value="remarks">
-                  <ion-item slot="header" class="accordion-header">
+                  <ion-item slot="header" class="accordion-header yellow">
                     <ion-icon :icon="documentText" slot="start"></ion-icon>
                     <ion-label>Remarques</ion-label>
                   </ion-item>
@@ -131,7 +131,7 @@
               <!-- Adresse de facturation -->
               <ion-accordion-group>
                 <ion-accordion value="billingAddress">
-                  <ion-item slot="header" class="accordion-header">
+                  <ion-item slot="header" class="accordion-header yellow">
                     <ion-icon :icon="home" slot="start"></ion-icon>
                     <ion-label>Adresse de facturation</ion-label>
                   </ion-item>
@@ -161,7 +161,7 @@
               <!-- Adresse de livraison -->
               <ion-accordion-group>
                 <ion-accordion value="deliveryAddress">
-                  <ion-item slot="header" class="accordion-header">
+                  <ion-item slot="header" class="accordion-header yellow">
                     <ion-icon :icon="location" slot="start"></ion-icon>
                     <ion-label>Adresse de livraison</ion-label>
                   </ion-item>
@@ -189,7 +189,7 @@
               </ion-accordion-group>
   
               <!-- Bouton pour soumettre le formulaire -->
-              <ion-button expand="full" type="submit" class="submit-button">Ajouter</ion-button>
+              <ion-button expand="full" type="submit" class="submit-button">Enregistrer</ion-button>
             </form>
           </div>
         </div>
@@ -238,6 +238,9 @@
       IonAccordion,
       IonAccordionGroup,
     },
+    props: {
+      id: String, // ID du fournisseur passé via la route
+    },
     data() {
       return {
         supplier: {
@@ -275,8 +278,35 @@
         },
       };
     },
+    async mounted() {
+      await this.fetchSupplier();
+    },
     methods: {
-
+      async fetchSupplier() {
+        try {
+          const lang = this.$route.params.lang; // Langue dynamique
+          const companyId = this.$route.params.companyId; // ID de l'entreprise
+          const response = await axios.get(
+            `/${lang}/api/public/company/${companyId}/supplier/${this.id}`
+          );
+          this.supplier = response.data;
+        } catch (error) {
+          console.error("Erreur lors de la récupération du fournisseur:", error);
+        }
+      },
+      async updateSupplier() {
+        try {
+          const lang = this.$route.params.lang; // Langue dynamique
+          const companyId = this.$route.params.companyId; // ID de l'entreprise
+          await axios.post(
+            `/${lang}/api/public/company/${companyId}/supplier/${this.id}/edit`,
+            this.supplier
+          );
+          this.$router.push("/fournisseur"); // Rediriger vers la liste des fournisseurs
+        } catch (error) {
+          console.error("Erreur lors de la mise à jour du fournisseur:", error);
+        }
+      },
       goBack() {
         this.$router.push("/fournisseur"); // Retour à la liste des fournisseurs
       },
@@ -293,7 +323,6 @@
     },
   };
   </script>
-  
   <style scoped>
   ion-content {
   --background: #ffffff; /* Fond blanc */
@@ -437,3 +466,4 @@ ion-input, ion-select, ion-textarea {
   transform: scale(1.05);
 }
   </style>
+  

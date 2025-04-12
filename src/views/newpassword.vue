@@ -46,10 +46,8 @@
               <ion-spinner v-else name="crescent"></ion-spinner>
             </ion-button>
   
-            <!-- Affichage des messages d'erreur -->
             <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   
-            <!-- Affichage des messages de succès -->
             <p v-if="successMessage" class="success">{{ successMessage }}</p>
           </div>
         </div>
@@ -71,84 +69,19 @@
     IonList,
     IonImg,
   } from "@ionic/vue";
-  
-  const API_BASE_URL = "https://api.iberis.io";
-  const router = useRouter();
-  const route = useRoute();
-  const email = ref(route.query.email || "");
-  const token = ref(route.query.token || "");
-  const newPassword = ref("");
-  const confirmPassword = ref("");
-  const errorMessage = ref("");
-  const successMessage = ref("");
-  const isLoading = ref(false);
-  
-  const isFormValid = computed(() => {
-    return (
-      newPassword.value.length >= 8 &&
-      confirmPassword.value.length >= 8 &&
-      newPassword.value === confirmPassword.value
-    );
-  });
-  const updatePassword = async () => {
-  try {
-    if (!isFormValid.value) {
-      errorMessage.value = "Veuillez remplir correctement les champs.";
-      return;
-    }
-
-    isLoading.value = true;
-    errorMessage.value = "";
-    successMessage.value = "";
-
-    console.log("Données envoyées à l'API :", {
-      token: token.value,
-      password: newPassword.value,
-      new_password: confirmPassword.value,
-    });
-
-    const response = await axios.post(
-      `${API_BASE_URL}/fr/api/private/user/reset/new`,
-      {
-        token: token.value,
-        password: newPassword.value,
-        new_password: confirmPassword.value,
-      },
-      {
-        timeout: 5000, 
-      }
-    );
-
-    console.log("Réponse de l'API :", response.data);
-
-    if (response.data.status?.code === 200) {
-      successMessage.value = "Votre mot de passe a été mis à jour avec succès.";
-      setTimeout(() => {
-        router.push("/login");
-      }, 3000);
-    } else if (response.data.status?.code === 404) {
-      errorMessage.value = "Jeton non trouvé. Veuillez réessayer.";
-    } else if (response.data.status?.code === 500) {
-      errorMessage.value = "Le jeton a expiré. Veuillez demander un nouveau jeton.";
-    } else if (response.data.status?.code === 501) {
-      errorMessage.value = "Les mots de passe ne correspondent pas.";
-    } else {
-      errorMessage.value =
-        response.data.status?.message || "Erreur lors de la mise à jour du mot de passe.";
-    }
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour du mot de passe :", error);
-    if (error.code === "ERR_NETWORK") {
-      errorMessage.value = "Problème de connexion au serveur. Vérifiez votre connexion Internet.";
-    } else {
-      errorMessage.value =
-        error.response?.data?.message || "Erreur lors de la mise à jour du mot de passe.";
-    }
-  } finally {
-    isLoading.value = false;
-  }
-};
-  </script>
+  const { 
+  email, 
+  token, 
+  newPassword, 
+  confirmPassword, 
+  errorMessage, 
+  successMessage, 
+  isLoading, 
+  isFormValid, 
+  updatePassword 
+} = useNewPasswordController();
+</script>
+ 
   
   <style scoped>
   ion-content {

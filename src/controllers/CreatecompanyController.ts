@@ -2,7 +2,7 @@ import { ref, computed } from 'vue';
 import { fetchActivities, fetchCountries, fetchCurrencies, fetchAccountingPeriods, createCompany } from '@/services/Createcompany';
 import { Activity, CompanyFormData, Country, Currency, AccountingPeriod } from '@/models/CreatCompanyModel';
 import { useRouter } from 'vue-router';
-
+import { Preferences } from '@capacitor/preferences';
 
 
 export const CreateCompanyForm = () => {
@@ -187,6 +187,23 @@ export const CreateCompanyForm = () => {
     if (!form.value.accounting_period_id) return "Accounting period is required";
     return null;
   };
+  const storeCompanyId = async (id: string | number): Promise<void> => {
+    try {
+      await Preferences.set({
+        key: 'hashed_id"',
+        value: id.toString() 
+      });
+      console.debug('Company ID stored securely');
+      
+      const { value } = await Preferences.get({ key: 'current_company_id' });
+      if (value !== id.toString()) {
+        throw new Error('Storage verification failed');
+      }
+    } catch (error) {
+      console.error('Company ID storage failed:', error);
+      throw new Error('Failed to persist company ID');
+    }
+  };
   const submitForm = async () => {
     const validationError = validateForm();
     if (validationError) {
@@ -220,7 +237,12 @@ export const CreateCompanyForm = () => {
         return;
       }
       if (response.data.status?.code === 200) {
-        console.log("Company created successfully!");
+        const companyId = response.data.data.id;
+        if (!companyId) {
+          throw new Error("Company created but no ID returned");
+        }
+        await storeCompanyId(companyId);
+        console.log("Company created successfully! ID:", companyId);
         router.push('/invoices'); 
       }
       if (response.data.status?.code === 400) {

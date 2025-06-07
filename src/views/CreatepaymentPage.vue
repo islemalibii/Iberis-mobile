@@ -1,324 +1,394 @@
 <template>
-    <ion-page>
-      <ion-header>
-        <ion-toolbar>
-          <ion-title>Iberis</ion-title>
-        </ion-toolbar>
-      </ion-header>
-      <ion-content :fullscreen="true">
-        <div class="payments-header">
-          <div class="header-row">
-            <ion-label class="title">Add payment</ion-label>
-          </div>
-          <p class="company">company name</p>
-        </div>     
-        <div class="content-wrapper">
-          <ion-accordion-group class="all">         
-            <ion-accordion>
-              <ion-item class="aTitle" slot="header">
-                <ion-icon :icon="createOutline"></ion-icon>
-                <ion-label>Payment Details</ion-label>
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Iberis</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content :fullscreen="true">
+      <div class="payments-header">
+        <div class="header-row">
+          <ion-label class="title">Add payment</ion-label>
+        </div>
+        <p class="company">{{ companyName }}</p>
+      </div>     
+      <div class="content-wrapper">
+        <ion-accordion-group class="all">         
+          <ion-accordion>
+            <ion-item class="aTitle" slot="header">
+              <ion-icon :icon="createOutline"></ion-icon>
+              <ion-label>Payment Details</ion-label>
+            </ion-item>
+            <div slot="content" class="accordion-content">
+              <ion-item>
+                <ion-label>Client</ion-label>
+                <div class="newpayment-paidamount">
+                  <ion-input 
+                    v-model="clientQuery"
+                    placeholder="Client" 
+                    class="newpayment-paid-input"
+                    readonly
+                    @click="toggleClientList">
+                  </ion-input>
+                </div>
               </ion-item>
-              <div slot="content" class="accordion-content">
+              <ion-list v-if="showClientList" class="dropdown-list" ref="clientList">
+                <ion-item v-if="clients.length === 0">
+                  <ion-label>No clients found</ion-label>
+                </ion-item>
+                <ion-item 
+                  v-else
+                  v-for="client in clients" 
+                  :key="client.hashed_id || client.hashed_id"
+                  button
+                  class="no-arrow"
+                  @click="selectClient(client)">
+                  <ion-label>
+                    <h3>{{ client.display_name }}</h3>
+                  </ion-label>
+                </ion-item>
+              </ion-list>            
+              <ion-item>
+                <ion-label class="newpayment-label">Paid Amount</ion-label>
+                <div class="newpayment-paidamount">
+                  <ion-input 
+                    v-model.number="paymentForm.paid"
+                    class="newpayment-paid-input" 
+                    type="number" 
+                    placeholder="Enter amount">
+                  </ion-input>
+                  <div class="currency-symbol">{{ selectedClientCurrency }}</div>
+                </div>
+              </ion-item>
+              <ion-item>
+                <ion-label>Payment method</ion-label>
+                <ion-select v-model="paymentForm.payment_method" class="newpayment-select" @ionChange="logSelected">
+                  <ion-select-option
+                    v-for="method in paymentMethods" 
+                    :key="method.hashed_id" 
+                    :value="method.hashed_id">
+                    {{ method.title }}
+                  </ion-select-option>
+                </ion-select>
+              </ion-item>
+              <template v-if="showBankFields">
                 <ion-item>
-                  <ion-label>Client</ion-label>
+                  <ion-label class="newpayment-label">Bank fees</ion-label>
                   <div class="newpayment-paidamount">
-                    <ion-input 
-                      v-model="clientQuery"
-                      placeholder="Client" 
-                      class="newpayment-paid-input"
-                      readonly
-                      @click="toggleClientList"
-                      ref="clientInput">
-                    </ion-input>
+                    <ion-input v-model.number="paymentForm.bank_fee" class="newpayment-paid-input" type="number" placeholder="Enter bank fees"></ion-input>
                   </div>
                 </ion-item>
-                <ion-list v-if="showClientList" class="dropdown-list" ref="clientList">
-                  <ion-item 
-                    v-for="client in clients" 
-                    :key="client.id"
-                    button
-                    class="no-arrow"
-                    @click="selectClient(client.name)">
-                    {{ client.name }}
-                  </ion-item>
-                </ion-list>             
                 <ion-item>
-                  <ion-label class="newpayment-label">Paid Amount</ion-label>
-                  <div class="newpayment-paidamount">
-                    <ion-input class="newpayment-paid-input" type="number" placeholder="Enter amount"></ion-input>
-                    <div class="currency-symbol">£</div>
-                  </div>
-                </ion-item>  
-                <ion-item>
-                  <ion-label>Payment method</ion-label>
-                  <ion-select v-model="selectedPaymentMethod" class="newpayment-select" @ionChange="logSelected">
-                    <ion-select-option value="cash">Cash</ion-select-option>
-                    <ion-select-option value="creditcard">Credit card</ion-select-option>
-                    <ion-select-option value="check">Check</ion-select-option>
-                    <ion-select-option value="bankrem">Bank remittance</ion-select-option>
-                    <ion-select-option value="banktran">Bank transfer</ion-select-option>
+                  <ion-label class="newpayment-label">Bank fees tax</ion-label>
+                  <ion-select 
+                    v-model="paymentForm.bankTaxId"
+                    class="newpayment-select" 
+                    placeholder="Select tax rate">
+                    <ion-select-option 
+                      v-for="tax in taxes" 
+                      :key="tax.hashed_id" 
+                      :value="tax.hashed_id">
+                      {{ tax.title }} ({{ tax.rate }}%)
+                    </ion-select-option>
                   </ion-select>
                 </ion-item>
-                <template v-if="selectedPaymentMethod !== 'cash'">
-                  <ion-item>
-                    <ion-label class="newpayment-label">Bank fees</ion-label>
-                    <div class="newpayment-paidamount">
-                      <ion-input class="newpayment-paid-input"></ion-input>
-                    </div>
-                  </ion-item>
-                  <ion-item>
-                    <ion-label class="newpayment-label">Bank fees tax</ion-label>
-                    <ion-select  class ="newpayment-select" value="0%">
-                      <ion-select-option value="0%">0%</ion-select-option>
-                      <ion-select-option value="fodec">FODEC(1%)</ion-select-option>
-                      <ion-select-option value="tva">TVA(19%)</ion-select-option>
-                    </ion-select>
-                  </ion-item>
-                  <ion-item>
-                    <ion-label class="newpayment-label">Banks</ion-label>
-                    <ion-select  class ="newpayment-select" value="test bank">
-                      <ion-select-option value="test bank">test bank</ion-select-option>
-                      <ion-select-option value="zitouna">Zitouna(TND)</ion-select-option>
-                    </ion-select>
-                  </ion-item>
-                </template>
                 <ion-item>
-                  <ion-label>Payment n°</ion-label>
-                  <div class="newpayment-paidamount">
-                    <div class="currency-symbol">PAY-S</div>
-                    <div class="currency-symbol">2025</div>
-                    <ion-input class="newpayment-paid-input" value="00002"></ion-input>
-                  </div>
-                </ion-item>  
-                <ion-item>
-                  <ion-label>Date</ion-label>
-                  <ion-input class="newpayment-date-input" type="date" value=""></ion-input>
+                  <ion-label class="newpayment-label">Banks</ion-label>
+                  <ion-select 
+                    v-model="paymentForm.bank_id"
+                    class="newpayment-select" 
+                    placeholder="Select a bank">
+                    <ion-select-option 
+                      v-for="bank in banks" 
+                      :key="bank.hashed_id" 
+                      :value="bank.hashed_id">
+                      {{ bank.bank }}
+                    </ion-select-option>
+                  </ion-select>
                 </ion-item>
-                <ion-item>
-                  <ion-label>Reference N°</ion-label>
-                  <div class="newpayment-paidamount">
-                    <ion-input placeholder="Enter reference number" class="newpayment-paid-input"></ion-input>
-                  </div>
-                </ion-item>
-                <ion-accordion-group>
-                  <ion-accordion>
-                    <ion-item slot="header" class="invoices-item">
-                        <ion-label class="invoices-label">Invoices</ion-label>
+              </template>
+              <ion-item>
+                <ion-label>Payment n°</ion-label>
+                <div class="newpayment-paidamount">
+                  <div class="currency-symbol">PAY-S</div>
+                  <div class="currency-symbol">{{ currentYear }}</div>
+                  <ion-input 
+                    v-model="paymentForm.payment_number"
+                    class="newpayment-paid-input"
+                    readonly>
+                  </ion-input>
+                </div>
+              </ion-item> 
+              <ion-item>
+                <ion-label>Date</ion-label>
+                <ion-input class="newpayment-date-input" type="date" v-model="paymentForm.date"></ion-input>
+              </ion-item>
+              <ion-item>
+                <ion-label>Reference N°</ion-label>
+                <div class="newpayment-paidamount">
+                  <ion-input placeholder="Enter reference number" v-model="paymentForm.reference" class="newpayment-paid-input"></ion-input>
+                </div>
+              </ion-item>
+              <ion-accordion-group>
+                <ion-accordion>
+                  <ion-item slot="header" class="invoices-item">
+                      <ion-label class="invoices-label">Invoices ({{ clientInvoices.length }})</ion-label>
+                  </ion-item>
+                  <div slot="content">
+                    <ion-item v-if="!selectedClient">
+                      <ion-label>Please select a client first</ion-label>
                     </ion-item>
-                    <div slot="content">
-                      <ion-item 
-                          v-for="invoice in invoices" 
-                          :key="invoice.id" 
-                          button
-                          class="invoice"
-                          @click="openPopover($event, invoice)">
-                          <ion-label class="invoice">Invoice: {{ invoice.number }}</ion-label>
-                        </ion-item>
-                    </div>
-                  </ion-accordion>
-                </ion-accordion-group>
-                <ion-accordion-group>
-                  <ion-accordion>
-                    <ion-item slot="header" class="invoices-item">
-                        <ion-label class="invoices-label">Disbursement note</ion-label>
+                    <ion-item v-else-if="clientInvoices.length === 0">
+                      <ion-label>No unpaid invoices found</ion-label>
                     </ion-item>
-                    <div slot="content">
-                      <ion-item 
-                          v-for="disbursementNote in disbursementNotes" 
-                          :key="disbursementNote.id" 
-                          button
-                          class="invoice"
-                          @click="openPopover($event, disbursementNote)">
-                          <ion-label class="invoice">Disbursement note: {{ disbursementNote.name }}</ion-label>
-                        </ion-item>
-                    </div>
-                  </ion-accordion>
-                </ion-accordion-group>
-                <ion-item>
-                  <ion-label>Notes</ion-label>
-                  <div class="newpayment-paidamount">
-                    <ion-textarea class="newpayment-paid-input" placeholder="Enter any remarks"></ion-textarea>
+                    <ion-item 
+                        v-else
+                        v-for="invoice in clientInvoices" 
+                        :key="invoice.hashed_id" 
+                        button
+                        class="invoice"
+                        @click="openPopover($event, invoice)">
+                        <ion-label class="invoice">
+                          <h3>Invoice: {{ invoice.invoice_number }}</h3>
+                          <p>Total: {{ invoice?.formattedTotal }}</p>
+                          <p>To Pay: {{ invoice.toPay }}</p>
+                        </ion-label>
+                      </ion-item>
                   </div>
-                </ion-item>
-                <ion-item>
-                  <div class="add-files">
-                    <ion-label>Pièces jointes</ion-label>
-                    <ion-button class="add-file">Choose Files</ion-button>
-                  </div>
-                </ion-item>
-                <ion-item class="item">
-                  <ion-label class="label">Paid</ion-label>
-                  <ion-text class="text">0.000</ion-text>
-                </ion-item>
-                <ion-item class="item">
-                  <ion-label class="label">Used</ion-label>
-                  <ion-text class="text">0.000</ion-text>
-                </ion-item>
-                <ion-item class="item">
-                  <ion-label class="label">Left to</ion-label>
-                  <ion-text class="text">0.000 TND</ion-text>
-                </ion-item>
-              </div>
-            </ion-accordion>
-            <!-- contenu Section -->
-            <ion-accordion value="PDF language">
-              <ion-item class="aTitle" slot="header">
-                <ion-icon :icon="calendarOutline"></ion-icon>
-                <ion-label>PDF language</ion-label>
-              </ion-item>
-              <div slot="content" class="accordion-content">
-                <ion-item>
-                    <ion-label>PDF language</ion-label>
-                      <ion-select class ="newpayment-select" value="Frensh">
-                        <ion-select-option value="Frensh">Frensh</ion-select-option>
-                        <ion-select-option value="Arabic">Arabic</ion-select-option>
-                        <ion-select-option value="English">English</ion-select-option>
-                      </ion-select>
+                </ion-accordion>
+              </ion-accordion-group>
+              <ion-accordion-group>
+                <ion-accordion>
+                  <ion-item slot="header" class="invoices-item">
+                      <ion-label class="invoices-label">Disbursement notes ({{ clientDisbursementNotes.length }})</ion-label>
                   </ion-item>
-              </div>
-            </ion-accordion>
-            <!-- stamp Section -->
-            <ion-accordion value="stamp">
-              <ion-item class="aTitle" slot="header">
-                <ion-icon :icon="chatbubbleOutline"></ion-icon>
-                <ion-label>Stamp & Signature</ion-label>
-              </ion-item>
-              <div slot="content" class="accordion-content">
-                <ion-item lines="none" class="toggle-row">
-                  <div class="a-toggle">
-                    <ion-label class="toggle-label">Stamp & Signature</ion-label>
-                    <ion-toggle></ion-toggle>
+                  <div slot="content">
+                    <ion-item v-if="!selectedClient">
+                      <ion-label>Please select a client first</ion-label>
+                    </ion-item>
+                    
+                    <ion-item v-else-if="clientDisbursementNotes.length === 0">
+                      <ion-label>No unpaid disbursement notes found</ion-label>
+                    </ion-item>
+                    
+                    <ion-item 
+                        v-else
+                        v-for="disbursement in clientDisbursementNotes" 
+                        :key="disbursement.hashed_id" 
+                        button
+                        class="invoice"
+                        @click="openPopover($event, disbursement)">
+                        <ion-label class="invoice">
+                          <h3>Disbursement note: {{ disbursement.hashed_id }}</h3>
+                          <p>Total: {{ disbursement.formattedTotal }} | To Pay: {{ disbursement.toPay }}</p>
+                        </ion-label>
+                      </ion-item>
                   </div>
-                </ion-item>
-              </div>
-            </ion-accordion>
-            <!--Only when currency is £ , when currency is tnd its removed-->
-            <ion-accordion value="devise">
-              <ion-item class="aTitle" slot="header">
-                <ion-icon :icon="chatbubbleOutline"></ion-icon>
-                <ion-label>Devise</ion-label>
+                </ion-accordion>
+              </ion-accordion-group>
+
+              <ion-item>
+                <ion-label>Notes</ion-label>
+                <div class="newpayment-paidamount">
+                  <ion-textarea class="newpayment-paid-input" placeholder="Enter any remarks" v-model="paymentForm.notes"></ion-textarea>
+                </div>
               </ion-item>
-              <div slot="content" class="accordion-content">
-                <ion-item>
-                  <ion-label>Currency rate (EUR to TND)</ion-label>
-                  <div class="input-button-container">
-                    <ion-input value="3.315"></ion-input>
-                    <ion-button class="reload-btn">
-                      <ion-icon :icon="refreshOutline"></ion-icon>
-                    </ion-button>
-                  </div>
-                </ion-item>
-              </div>
-            </ion-accordion>
-          <!--END-->
-          </ion-accordion-group>
-          
-
-          <div class="add-payment-container">
-            <ion-button class="add-payment">Add</ion-button>
-          </div>
-        </div>
-
-        <ion-modal :is-open="popoverOpen" :event="popoverEvent" @didDismiss="popoverOpen = false" class="invoice-model">
-          <ion-header>
-            <ion-toolbar>
-              <ion-title>{{ selectedInvoice?.number }}</ion-title>
-              <ion-buttons slot="end">
-                <ion-button @click="popoverOpen = false">
-                  <ion-icon :icon="closeOutline"></ion-icon>
-                </ion-button>
-              </ion-buttons>
-            </ion-toolbar>
-          </ion-header>
-          <ion-content class="ion-padding">
-            <ion-item>
-              <ion-label>Total</ion-label>
-              <div class="invoice-div">
-                <ion-text class="invoice-champ">{{ selectedInvoice?.total }}</ion-text>
-              </div>            
-            </ion-item>
-            <ion-item>
-              <ion-label>To pay</ion-label>
-              <div class="invoice-div">
-                <ion-text class="invoice-champ">{{ selectedInvoice?.toPay }}</ion-text>
-              </div>
-            </ion-item>
-            <ion-item>
-              <ion-label>Payment</ion-label>
-              <div class="invoice-div">
-                <ion-input class="invoice-champ"></ion-input>
-              </div>            
-            </ion-item>
-            <div class="invoice-modal-actions">
-              <ion-button color="danger" @click="popoverOpen = false">Fermer</ion-button>
-              <ion-button color="primary" @click="addpayment">Ajouter</ion-button>
+              <ion-item v-if="paymentForm.notes && paymentForm.notes.length > 0 && paymentForm.notes.length < 5" class="error-item">
+                <ion-label style="color: #f04141; font-size: 12px;">Notes must be at least 5 characters long</ion-label>
+              </ion-item>
+              <ion-item>
+                <div class="add-files">
+                  <ion-label>Attachments</ion-label>
+                  <ion-button class="add-file" @click="triggerFileInput">
+                    {{ getFileDisplayText() }}
+                  </ion-button>
+                  <input 
+                    ref="fileInputRef"
+                    type="file" 
+                    multiple 
+                    style="display: none;"
+                    @change="handleFileChange">
+                </div>
+              </ion-item>
+              <ion-item class="item">
+                <ion-label class="label">Paid</ion-label>
+                <ion-text class="text">{{ paymentForm.paid?.toFixed(3) || '0.000' }}</ion-text>
+              </ion-item>
+              <ion-item class="item">
+                <ion-label class="label">Used</ion-label>
+                <ion-text class="text">{{ totalUsedAmount.toFixed(3) }}</ion-text>
+              </ion-item>
+              <ion-item class="item">
+                <ion-label class="label">Left to</ion-label>
+                <ion-text class="text">{{ leftToUseAmount.toFixed(3) }} {{ selectedClientCurrency }}</ion-text>
+              </ion-item>
             </div>
-          </ion-content>
-        </ion-modal>
-    </ion-content>
-  </ion-page>
-  </template>
-  <script setup>
-    import { closeOutline, refreshOutline } from 'ionicons/icons';
-    import { ref, onMounted, onUnmounted } from "vue";
-    const selectedPaymentMethod = ref('cash');
-    const clientQuery = ref(""); 
-    const showClientList = ref(false);
-    const clientInput = ref(null);
-    const clientList = ref(null);
-    const popoverOpen = ref(false);
-    const popoverEvent = ref(null);
-    const selectedInvoice = ref(null);
-    const clients = ref([
-      { id: 1, name: "John Doe" },
-      { id: 2, name: "Jane Smith" },
-      { id: 3, name: "Michael Johnson" }
-    ]);
-    const invoices = ref([
-    { id: 1, number: "2024-00001", total: 1500, toPay: 500 },
-    { id: 2, number: "2024-00002", total: 2000, toPay: 1500 },
-    { id: 3, number: "2024-00003", total: 3000, toPay: 1000 }
-    ]);
-    const disbursementNotes = ref([
-    { id: 1, name: "nOl", total: 444.00, toPay: 444.00 }
-    ]);
-    const logSelected = (event) => {
-      selectedPaymentMethod.value = event.detail.value; 
-      console.log("Selected Payment Method:", selectedPaymentMethod.value);
-    };
-    const openPopover = (event, invoice) => {
-      selectedInvoice.value = invoice;
-      popoverEvent.value = event;
-      popoverOpen.value = true;
-    };
-    //mayekhdmch
-    const toggleClientList = () => {
-      showClientList.value = !showClientList.value;
-    };
-    const selectClient = (name) => {
-      clientQuery.value = name;
-      showClientList.value = false;
-    };
-    const handleClickOutside = (event) => {
-      if (
-        clientInput.value && !clientInput.value.$el.contains(event.target) &&
-        clientList.value && !clientList.value.$el.contains(event.target)
-      ) {
-        showClientList.value = false;
-      }
-    };
-    onMounted(() => {
-      document.addEventListener("click", handleClickOutside);
-    });
+          </ion-accordion>
+          <!-- contenu Section -->
+          <ion-accordion value="PDF language">
+            <ion-item class="aTitle" slot="header">
+              <ion-icon :icon="calendarOutline"></ion-icon>
+              <ion-label>PDF language</ion-label>
+            </ion-item>
+            <div slot="content" class="accordion-content">
+              <ion-item>
+                  <ion-label>PDF language</ion-label>
+                    <ion-select class="newpayment-select" v-model="paymentForm.language">
+                      <ion-select-option value="fr">Frensh</ion-select-option>
+                      <ion-select-option value="ar">Arabic</ion-select-option>
+                      <ion-select-option value="en">English</ion-select-option>
+                    </ion-select>
+                </ion-item>
+            </div>
+          </ion-accordion>
+          <!-- stamp Section -->
+          <ion-accordion value="stamp">
+            <ion-item class="aTitle" slot="header">
+              <ion-icon :icon="chatbubbleOutline"></ion-icon>
+              <ion-label>Stamp & Signature</ion-label>
+            </ion-item>
+            <div slot="content" class="accordion-content">
+              <ion-item lines="none" class="toggle-row">
+                <div class="a-toggle">
+                  <ion-label class="toggle-label">Stamp & Signature</ion-label>
+                  <ion-toggle :model-value="paymentForm.use_stamp === 1"
+                  @update:modelValue="paymentForm.use_stamp = $event ? 1 : 0"></ion-toggle>                </div>
+              </ion-item>
+            </div>
+          </ion-accordion>
+          <!--Only when currency is EUR, when currency is TND its removed-->
+          <ion-accordion value="devise" v-if="selectedClientCurrency === '€'">
+            <ion-item class="aTitle" slot="header">
+              <ion-icon :icon="chatbubbleOutline"></ion-icon>
+              <ion-label>Devise</ion-label>
+            </ion-item>
+            <div slot="content" class="accordion-content">
+              <ion-item>
+                <ion-label>Currency rate (EUR to TND)</ion-label>
+                <div class="input-button-container">
+                  <div class="newpayment-paidamount">
+                    <ion-input 
+                      v-model.number="paymentForm.currency_rate"
+                      placeholder="1"
+                      class="newpayment-paid-input">
+                    </ion-input>
+                  </div>
+                  <ion-button class="reload-btn" @click="reloadCurrencyRate">
+                    <ion-icon :icon="refreshOutline"></ion-icon>
+                  </ion-button>
+                </div>
+              </ion-item>
+            </div>
+          </ion-accordion>
+        </ion-accordion-group>
+        <div class="add-payment-container">
+          <ion-button class="add-payment" @click="Add">Add</ion-button>
+        </div>
+      </div>
 
-    onUnmounted(() => {
-      document.removeEventListener("click", handleClickOutside);
-    });
-    //lhna
+      <ion-modal :is-open="popoverOpen" :event="popoverEvent" @didDismiss="popoverOpen = false" class="invoice-model">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>
+              {{ selectedInvoice?.invoice_number ? `Invoice ${selectedInvoice.invoice_number}` : 
+                `Disbursement ${selectedInvoice?.hashed_id}` }}
+            </ion-title>
+            <ion-buttons slot="end">
+              <ion-button @click="popoverOpen = false">
+                <ion-icon :icon="closeOutline"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="ion-padding">
+          <ion-item>
+            <ion-label>Total</ion-label>
+            <div class="invoice-div">
+              <ion-text class="invoice-champ">{{ selectedInvoice?.formattedTotal }}</ion-text>
+            </div>            
+          </ion-item>
+          <ion-item>
+            <ion-label>To pay</ion-label>
+            <div class="invoice-div">
+              <ion-text class="invoice-champ">{{ selectedInvoice?.toPay }}</ion-text>
+            </div>
+          </ion-item>
+          <ion-item>
+            <ion-label>Pay</ion-label>
+            <div class="invoice-div">
+              <ion-input 
+                v-model.number="currentInvoicePayment"
+                class="invoice-champ"
+                type="number"
+                :max="selectedInvoice?.unpaid"
+                placeholder="Enter payment amount">
+              </ion-input>
+            </div>            
+          </ion-item>
+          <div class="invoice-modal-actions">
+            <ion-button color="danger" @click="popoverOpen = false">Close</ion-button>
+            <ion-button color="primary" @click="addInvoicePayment">Add</ion-button>
+          </div>
+        </ion-content>
+      </ion-modal>
+  </ion-content>
+</ion-page>
+</template>
+
+<script setup lang="ts">
+import { 
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, 
+  IonList, IonItem, IonLabel, IonButton, IonPopover, 
+  IonButtons, IonIcon, IonModal, IonInput, IonSelect,
+  IonSelectOption, IonAccordion, IonAccordionGroup,
+  IonTextarea, IonText, IonToggle
+} from '@ionic/vue';
+import { 
+  closeOutline, 
+  refreshOutline, 
+  createOutline,
+  calendarOutline,
+  chatbubbleOutline
+} from 'ionicons/icons';
+import { PaymentsController } from '@/controllers/PaymentController';
+
+const {
+  companyName,
+  banks,
+  clientQuery,
+  showClientList,
+  clientList,
+  toggleClientList,
+  selectClient,
+  showBankFields,
+  paymentMethods,
+  logSelected,
+  taxes,
+  clients,
+  clientInvoices,
+  clientDisbursementNotes,
+  popoverOpen,
+  popoverEvent,
+  selectedInvoice,
+  openPopover,
+  currentYear,
+  selectedClient,
+  selectedClientCurrency,
+  paymentForm,
+  currentInvoicePayment,
+  totalUsedAmount,
+  leftToUseAmount,
+  fileInputRef,
+  reloadCurrencyRate,
+  triggerFileInput,
+  handleFileChange,
+  getFileDisplayText,
+  Add,
+  addInvoicePayment,
+} = PaymentsController();
 
 
-  </script>
+</script>
   <style scoped>
   :root {
     --ion-background-color: #F8FAFC !important;
@@ -339,6 +409,25 @@
     overflow-y: auto;
     padding-bottom: 80px;
   }
+  .file-selection-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 7px;
+}
+.file-status {
+  color: #666;
+  font-size: 0.9em;
+  border: 1px solid #666;
+  border-radius: 5px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+.attachments-label{
+  margin-top: 17px;
+}
   ion-item {
     width: 100%;
     --inner-padding-end: 0;
@@ -671,3 +760,4 @@
     --padding-end: 5px !important; 
   }
   </style>
+

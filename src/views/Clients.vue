@@ -3,9 +3,9 @@
     <ion-content>
       <div class="container">
         <div class="logo-container">
-          <a href="clients"> <!-- Remplacez "/" par l'URL de destination souhaitée -->
-    <img src="../assets/logo-iberis.png" alt="Logo Iberis" class="logo" />
-  </a>
+          <router-link to="/clients">
+            <img src="../assets/logo-iberis.png" alt="Logo Iberis" class="logo" />
+          </router-link>
         </div>
 
         <div class="content-wrapper">
@@ -16,38 +16,34 @@
           ></ion-searchbar>
 
           <div v-if="isLoading" class="loading">Chargement en cours...</div>
+
           <div v-else>
             <ion-list class="list">
               <ion-item
                 v-for="client in paginatedClients"
-                :key="client.id"
+                :key="client.personal_id"
                 class="item"
-                @click="viewClientDetails(client.id)"
+                @click="viewClientDetails(client.hashed_id)"
               >
                 <ion-label class="client-info">
-                  <h2>{{ client.displayName }}</h2>
+                  <h2>{{ client.display_name}}</h2>
                   <p>{{ client.email }}</p>
                   <p>{{ client.phone }}</p>
                 </ion-label>
 
                 <div class="actions">
-                
-
-                  <!-- Bouton pour modifier le client -->
                   <img
                     src="../assets/icons8-modify-64.png"
                     alt="modify"
                     class="action-icon"
-                    @click.stop="editClient(client.id)" 
+                    @click.stop="editClient(client.hashed_id)"
                   />
-
-                  <!-- Bouton pour supprimer le client -->
                   <img
                     src="../assets/delete.png"
                     alt="delete"
                     class="action-icon danger"
-                    @click.stop="deleteClient(client.id)" 
-                  />
+                    @click.stop="confirmDelete(client.hashed_id)" 
+                    />
                 </div>
               </ion-item>
             </ion-list>
@@ -79,30 +75,26 @@
     </ion-content>
   </ion-page>
 </template>
-
 <script setup lang="ts">
-import {  onMounted } from 'vue';
+import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { 
-  IonPage, IonToolbar, IonTitle, IonContent,
-  IonList, IonItem, IonLabel, IonButton, 
-  IonSearchbar, IonFooter, IonButtons, IonFab, IonFabButton, toastController
+import {
+  IonPage, IonContent, IonList, IonItem, IonLabel,
+  IonButton, IonSearchbar, IonFooter, IonToolbar,
+  IonTitle, IonButtons, IonFab, IonFabButton,
+  IonSpinner, toastController, alertController
 } from '@ionic/vue';
 import { useClientController } from '@/controllers/ClientController';
 
 const router = useRouter();
 
-// Configuration
-const lang = 'fr';
-const companyId = 1; // À remplacer par l'ID réel
-const token = localStorage.getItem('token') || '';
-
-// Controller
 const {
+  clients,
   searchQuery,
   isLoading,
   currentPage,
   paginatedClients,
+  getDisplayNameType,
   totalPages,
   loadClients,
   deleteClient,
@@ -111,67 +103,81 @@ const {
 } = useClientController();
 
 // Chargement initial
-onMounted(() => {
-  if (token) {
-    loadClients(lang, companyId, token);
-  } else {
-    router.push('/login');
-  }
+onMounted(async () => {
+  await loadClients();
+  
 });
 
-// Méthodes
-const getStatusColor = (status: string) => {
-  switch (status?.toLowerCase()) {
-    case 'actif': return 'success';
-    case 'inactif': return 'warning';
-    case 'bloqué': return 'danger';
-    default: return 'medium';
-  }
-};
-
-const confirmDelete = async (clientId: number) => {
-  const toast = await toastController.create({
-    header: 'Confirmation',
-    message: 'Voulez-vous vraiment supprimer ce client ?',
-    position: 'middle',
+// Confirmation de suppression
+const confirmDelete = async (personal_id: string) => {
+  const alert = await alertController.create({
+    header: 'Confirmer la suppression',
+    message: 'Cette action est irréversible. Continuer ?',
     buttons: [
       {
         text: 'Annuler',
-        role: 'cancel'
+        role: 'cancel',
+        cssClass: 'secondary'
       },
       {
         text: 'Supprimer',
-        handler: () => performDelete(clientId)
+        handler: async () => {
+          try {
+            await performDelete(personal_id);
+          } catch (error) {
+            console.error('Erreur dans le handler:', error);
+          }
+        }
       }
     ]
   });
-  await toast.present();
+  await alert.present();
 };
 
-const performDelete = async (clientId: number) => {
+// Fonction de suppression
+const performDelete = async (personal_id: string) => {
+  const loadingToast = await toastController.create({
+    message: 'Suppression en cours...',
+    duration: 0, // Toast persistant
+    position: 'top'
+  });
+  await loadingToast.present();
+
   try {
-    await deleteClient(lang, companyId, clientId, token);
+    const success = await deleteClient(personal_id);
+    await loadingToast.dismiss();
+
+    if (success) {
+      const toast = await toastController.create({
+        message: 'Client supprimé avec succès',
+        duration: 2000,
+        color: 'success',
+        position: 'top'
+      });
+      await toast.present();
+      await loadClients(); // Recharger les données
+    } else {
+      throw new Error('La suppression a échoué');
+    }
+  } catch (error) {
+    await loadingToast.dismiss();
+    console.error('Erreur complète:', error);
+
     const toast = await toastController.create({
-      message: 'Client supprimé avec succès',
-      duration: 2000,
-      color: 'success'
-    });
-    await toast.present();
-  } catch (err) {
-    const toast = await toastController.create({
-      message: 'Erreur lors de la suppression',
-      duration: 2000,
-      color: 'danger'
+      message: error instanceof Error ? error.message : 'Erreur inconnue',
+      duration: 3000,
+      color: 'danger',
+      position: 'top'
     });
     await toast.present();
   }
 };
 
+// Navigation
 const openAddClientModal = () => router.push('/add-client');
-const editClient = (id: number) => router.push(`/edit-client/${id}`);
-const viewClientDetails = (id: number) => router.push(`/client/${id}`);
+const editClient = (id: string) => router.push(`/edit-client/${id}`);
+const viewClientDetails = (id: string) => router.push(`/client/${id}`);
 </script>
-
 <style scoped>
 /* Vos styles restent inchangés */
 ion-content {

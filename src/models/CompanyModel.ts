@@ -29,6 +29,20 @@ export interface AccountingPeriod {
     title: string;
     hashed_id: string;
 }
+export interface WithholdingType {
+    rate: number;
+    title: string;
+    created_at: string;
+    updated_at: string;
+    usageCount: number;
+    isUsed: boolean;
+    hashed_id: string;
+    hashed_company_id: string;
+    hashed_sales_journal_id: string;
+    hashed_purchases_journal_id: string;
+    formatted_title: string;
+}
+  
 export interface CompanyFormData {
     title: string;      
     logo?: File | null;        
@@ -43,3 +57,22 @@ export interface CompanyFormData {
     fiscal_id?: string;        
     phone?: string;
 }
+export interface Company {
+    hashed_id: string;
+    title: string;
+    logo?: string | null;
+    fiscal_id?: string;
+    address?: string;
+    state?: string;
+    zip_code?: string;
+    phone?: string;
+    website?: string | null;
+    status?: number;
+    language?: string;
+    accounting_period_id?: number;
+    hashed_activity_id?: string;
+    hashed_country_id?: string;
+    hashed_default_currency_id?: string;
+    created_at?: string;
+    updated_at?: string;
+  }

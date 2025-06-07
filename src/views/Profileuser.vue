@@ -17,12 +17,12 @@
                   <img src="../assets/profile.png" class="icon" />
                   {{ user.status || "Non défini" }}
                 </p>
-                <p class="verified">
+                <p class="phone">
                   <img src="../assets/iphone.png" class="icon" />
-                  Vérifié: {{ user.verificationCode || "Non vérifié" }}
+                  {{ user.phone }}
                 </p>
               </div>
-
+        
               <div class="info-row">
                 <p class="email">
                   <img src="../assets/email.png" class="icon" />
@@ -31,23 +31,22 @@
               </div>
 
               <div class="info-row">
-                <p class="subscription">
-                  <ion-icon :icon="calendarOutline" class="icon"></ion-icon>
-                  {{ user.subscription || "Non défini" }}
-                </p>
                 <p class="companies">
                   <ion-icon :icon="businessOutline" class="icon"></ion-icon>
-                  Entreprise(s) possédées: {{ user.companiesOwned || "Aucune" }}
+                  Entreprises possédées: {{ user.companiesOwned?.length || 0 }}
                 </p>
                 <p class="companies">
                   <ion-icon :icon="peopleOutline" class="icon"></ion-icon>
-                  Entreprise(s) rejointes: {{ user.companiesJoined || "Aucune" }}
+                  Entreprises rejointes: {{ user.companiesJoined?.length || 0 }}
                 </p>
               </div>
             </div>
           </div>
         </div>
-
+        <ion-item class="item" button @click="goToNotifications">
+          <ion-icon :icon="notificationsOutline" slot="start"></ion-icon>
+          <ion-label>Notifications</ion-label>
+        </ion-item>
         <div class="form-section">
           <div v-if="page === 1">
             <div class="avatar-section">
@@ -67,19 +66,18 @@
             <ion-list class="list">
               <ion-item class="item">
                 <ion-input
-                    :value="user.fullname"
-                    @ionInput="user.fullname = $event.detail.value"
-                    placeholder="Nom Complet"
-                  ></ion-input>
-
+                  v-model="user.fullname"
+                  :value="user.fullname"
+                  @ionInput="user.fullname = $event.detail.value"
+                  placeholder="Nom Complet"
+                ></ion-input>
               </ion-item>
               <ion-item class="item">
                 <ion-input
-                    :value="user.email"
-                    placeholder="Email"
-                    readonly
-                  ></ion-input>
-
+                  v-model="user.email"
+                  placeholder="Email"
+                  readonly
+                ></ion-input>
               </ion-item>
             </ion-list>
 
@@ -90,32 +88,29 @@
             <ion-list class="list">
               <ion-item class="item">
                 <ion-input
-                    :value="user.phone"
-                    placeholder="Téléphone"
-                    readonly
-                  ></ion-input>
-
+                  v-model="user.phone"
+                  placeholder="Téléphone"
+                  readonly
+                ></ion-input>
               </ion-item>
               <ion-item class="item">
                 <ion-input
-                    type="date"
-                    :value="user.birthday"
-                    @ionInput="user.birthday = $event.detail.value"
-                    placeholder="Anniversaire"
-                  ></ion-input>
-
+                  type="date"
+                  v-model="user.birthday"
+                  @ionInput="user.birthday = $event.detail.value"
+                  placeholder="Anniversaire"
+                ></ion-input>
               </ion-item>
               <ion-item class="item">
                 <ion-select
-                    :value="user.gender"
-                    @ionChange="user.gender = $event.detail.value"
-                    placeholder="Sélectionnez votre sexe"
-                  >
-                    <ion-select-option value="male">Homme</ion-select-option>
-                    <ion-select-option value="female">Femme</ion-select-option>
-                    <ion-select-option value="other">Autre</ion-select-option>
-                  </ion-select>
-
+                  v-model="user.gender"
+                  @ionChange="user.gender = $event.detail.value"
+                  placeholder="Sélectionnez votre sexe"
+                >
+                  <ion-select-option value="male">Homme</ion-select-option>
+                  <ion-select-option value="female">Femme</ion-select-option>
+                  <ion-select-option value="other">Autre</ion-select-option>
+                </ion-select>
               </ion-item>
             </ion-list>
 
@@ -129,42 +124,71 @@
             <ion-list class="list">
               <ion-item class="item">
                 <ion-input
-                    type="password"
-                    v-model="passwords.old"
-                    placeholder="Ancien mot de passe"
-                  ></ion-input>
-
+                  type="password"
+                  v-model="passwords.old"
+                  placeholder="Ancien mot de passe"
+                ></ion-input>
               </ion-item>
               <ion-item class="item">
                 <ion-input
-                    type="password"
-                    v-model="passwords.new"
-                    placeholder="Nouveau mot de passe"
-                  ></ion-input>
-
+                  type="password"
+                  v-model="passwords.new"
+                  placeholder="Nouveau mot de passe"
+                ></ion-input>
               </ion-item>
               <ion-item class="item">
                 <ion-input
-                    type="password"
-                    v-model="passwords.confirm"
-                    placeholder="Confirmer le mot de passe"
-                  ></ion-input>
-
+                  type="password"
+                  v-model="passwords.confirm"
+                  placeholder="Confirmer le mot de passe"
+                ></ion-input>
               </ion-item>
             </ion-list>
+
+           
+
+            <ion-item class="item">
+  <ion-label>Expiration de session</ion-label>
+  <ion-toggle
+    v-model="sessionExpirationEnabled"
+    @ionChange="handleToggleChange($event.detail.checked)"
+  ></ion-toggle>
+</ion-item>
+
+<template v-if="sessionExpirationEnabled">
+  <ion-item class="item">
+    <ion-label position="stacked">Durée (minutes)</ion-label>
+    <ion-input
+      type="number"
+      min="1"
+      v-model.number="sessionExpirationMinutes"
+      placeholder="Durée en minutes"
+    ></ion-input>
+  </ion-item>
+  
+  <ion-button
+    expand="block"
+    @click="updateSessionExpirationSettings"
+    :disabled="!sessionExpirationMinutes || sessionExpirationMinutes < 1"
+  >
+    <ion-spinner v-if="loading" name="crescent"></ion-spinner>
+    <span v-else>Enregistrer la durée</span>
+  </ion-button>
+  
+  <ion-note v-if="user.sessionExpiration">
+    Durée actuelle: {{ user.sessionExpiration }} minutes
+  </ion-note>
+</template>
 
             <div class="buttonContainer">
               <ion-button expand="block" class="back-button" @click="previousPage">Retour</ion-button>
               <ion-button expand="block" class="next-button" @click="saveProfile">Enregistrer</ion-button>
             </div>
-
             <ion-item class="item">
-              <ion-label>Vérification en 2 étapes</ion-label>
-              <ion-toggle 
-                  :checked="user.twoFactorEnabled" 
-                  @ionChange="user.twoFactorEnabled = $event.detail.checked"
-                ></ion-toggle>
-
+              <ion-label color="danger">Supprimer mon compte</ion-label>
+              <ion-button @click="confirmDeletion" fill="outline" color="danger">
+                Supprimer
+              </ion-button>
             </ion-item>
           </div>
         </div>
@@ -182,32 +206,18 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from 'vue';
+import { defineComponent, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonContent, IonAvatar, IonButton,
   IonInput, IonItem, IonList, IonSelect, IonSelectOption,
-  IonLabel, IonToggle, IonIcon, IonToast
+  IonLabel, IonToggle, IonIcon, IonToast,
+  toastController
 } from '@ionic/vue';
-import { calendarOutline, businessOutline, peopleOutline } from 'ionicons/icons';
-import { AuthService } from '@/services/User';
+import { notificationsOutline } from 'ionicons/icons';
 
-interface UserProfile {
-  id: number;
-  fullname: string;
-  email: string;
-  phone: string;
-  image: string;
-  birthday?: string;
-  gender?: string;
-  status: string;
-  verificationCode: string;
-  subscription: string;
-  companiesOwned: string[];
-  companiesJoined: string[];
-  twoFactorEnabled: boolean;
-}
-
+import { businessOutline, peopleOutline } from 'ionicons/icons';
+import { useUserController } from '@/controllers/UserController';
 export default defineComponent({
   name: 'ProfilePage',
   components: {
@@ -218,23 +228,23 @@ export default defineComponent({
   setup() {
     const router = useRouter();
     const fileInput = ref<HTMLInputElement | null>(null);
-    const page = ref(1);
     const error = ref<string | null>(null);
-
-    const user = ref<UserProfile>({
-      id: 0,
-      fullname: '',
-      email: '',
-      phone: '',
-      image: 'https://example.com/default-avatar.jpg',
-      status: 'Gratuit',
-      verificationCode: '',
-      subscription: 'Forever',
-      companiesOwned: [],
-      companiesJoined: [],
-      twoFactorEnabled: false
-    });
-  
+    const showDeleteToast = ref(false);
+    const deleteToastMessage = ref('');
+    const page = ref(1);
+    const sessionExpirationEnabled = ref(false);
+    const sessionExpirationMinutes = ref<number | null>(0);
+      const unreadCount = ref(0);
+    const userController = useUserController();
+    const {
+      userProfile: user,
+      loadUserProfile,
+      updateProfile,
+      updatePassword,
+      updateSessionExpiration,
+      uploadImage,
+      requestAccountDeletion
+    } = userController;
 
     const passwords = ref({
       old: '',
@@ -242,80 +252,155 @@ export default defineComponent({
       confirm: ''
     });
 
-    const loadUserData = async () => {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
+    /*onMounted(async () => {
       try {
-        const profile = await AuthService.fetchUserProfile(token);
-        user.value = {
-          ...user.value,
-          ...profile,
-          image: profile.image || user.value.image
-        };
+        await loadUserProfile();
       } catch (err) {
-        error.value = "Erreur de chargement du profil";
+        error.value = "Session expirée - Veuillez vous reconnecter";
         console.error(err);
-      }
-    };
-
-    const saveProfile = async () => {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
         router.push('/login');
-        return;
       }
-
-      try {
-        await AuthService.updateProfile(token, {
-          fullname: user.value.fullname,
-          phone: user.value.phone,
-          birthday: user.value.birthday,
-          gender: user.value.gender,
-          twoFactorEnabled: user.value.twoFactorEnabled
-        });
-        
-        // Redirection après sauvegarde
-        window.location.href = '/dashboard';
-      } catch (err) {
-        error.value = "Erreur lors de la sauvegarde";
-        console.error(err);
-      }
-    };
-
+    });
+*/
+onMounted(async () => {
+  await loadUserProfile();
+  sessionExpirationEnabled.value = !!user.value.sessionExpiration;
+  if (user.value.sessionExpiration) {
+    sessionExpirationMinutes.value = user.value.sessionExpiration;
+  }
+});
     const changeImage = async (event: Event) => {
       const input = event.target as HTMLInputElement;
       if (input.files?.length) {
-        const token = localStorage.getItem('auth_token');
-        if (!token) return;
-
         try {
-          const imageUrl = await AuthService.uploadImage(token, input.files[0]);
-          user.value.image = imageUrl;
+          await uploadImage(input.files[0]);
         } catch (err) {
           error.value = "Erreur lors du changement de photo";
           console.error(err);
         }
       }
+      
+    };
+    
+    const goToNotifications = () => {
+      router.push('/notifications');
+    };
+    const toggleSessionExpiration = (enabled: boolean) => {
+      sessionExpirationEnabled.value = enabled;
+      if (!enabled) {
+        disableSessionExpiration();
+      }
     };
 
-    const handleInput = (field: string, event: any) => {
-      (user.value as any)[field] = event.target.value;
+    const updateSessionExpirationSettings = async () => {
+  if (!sessionExpirationMinutes.value || sessionExpirationMinutes.value < 1) {
+    showToast('Durée invalide (min. 1 minute)', 'danger');
+    return;
+  }
+
+  const { success, message } = await updateSessionExpiration(sessionExpirationMinutes.value);
+  showToast(message, success ? 'success' : 'danger');
+};
+
+const showToast = async (message: string, color: string) => {
+  const toast = await toastController.create({
+    message,
+    duration: 2000,
+    color
+  });
+  await toast.present();
+};
+const handleToggleChange = async (enabled: boolean) => {
+  sessionExpirationEnabled.value = enabled;
+  if (!enabled) {
+    const { success, message } = await updateSessionExpiration(null);
+    showToast(message, success ? 'success' : 'danger');
+  }
+};
+const disableSessionExpiration = async () => {
+  const result = await updateSessionExpiration(null);
+  
+  const toast = await toastController.create({
+    message: result.message,
+    duration: 2000,
+    color: 'success'
+  });
+  await toast.present();
+  
+  // Recharger les données utilisateur
+  await loadUserProfile();
+};
+
+    const confirmDeletion = () => {
+      deleteToastMessage.value = "Êtes-vous sûr de vouloir supprimer votre compte ?";
+      showDeleteToast.value = true;
     };
 
-    const triggerFileInput = () => {
-      fileInput.value?.click();
+    const formatDate = (dateString?: string) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
     };
 
-    const nextPage = () => page.value++;
-    const previousPage = () => page.value--;
+    const triggerFileInput = () => fileInput.value?.click();
+    
+    const nextPage = () => {
+      if (page.value < 3) {
+        page.value++;
+        if (page.value === 3) {
+          saveProfile(true);
+        }
+      }
+    };
 
-    onMounted(() => {
-      loadUserData();
-    });
+    const previousPage = () => {
+      if (page.value > 1) {
+        page.value--;
+      }
+    };
+
+    const saveProfile = async (forceProfileUpdate = false) => {
+      try {
+        if (forceProfileUpdate || page.value !== 3) {
+          if (!user.value.fullname?.trim()) {
+            throw new Error('Le nom complet est obligatoire');
+          }
+
+          await updateProfile({
+            fullname: user.value.fullname,
+            birthday: user.value.birthday,
+            gender: user.value.gender,
+            phone: user.value.phone,
+            twoFactorEnabled: user.value.twoFactorEnabled
+          });
+        } else if (passwords.value.old && passwords.value.new && passwords.value.confirm) {
+          if (passwords.value.new !== passwords.value.confirm) {
+            throw new Error('Les mots de passe ne correspondent pas');
+          }
+          
+          await updatePassword(passwords.value);
+        } else {
+          throw new Error('Action non reconnue');
+        }
+
+        const toast = await toastController.create({
+          message: 'Profil mis à jour avec succès',
+          duration: 2000,
+          color: 'success'
+        });
+        await toast.present();
+
+        await loadUserProfile();
+        
+      } catch (err: any) {
+        console.error('[Vue] Erreur:', err.message);
+        error.value = err.message;
+      }
+    };
 
     return {
       user,
@@ -323,20 +408,27 @@ export default defineComponent({
       page,
       error,
       fileInput,
-      calendarOutline,
+      showDeleteToast,
+      deleteToastMessage,
       businessOutline,
       peopleOutline,
       changeImage,
       triggerFileInput,
-      handleInput,
       nextPage,
       previousPage,
-      saveProfile
+      saveProfile,
+      formatDate,
+      confirmDeletion,
+      sessionExpirationEnabled,
+      sessionExpirationMinutes,
+      toggleSessionExpiration,
+      updateSessionExpirationSettings,
+      notificationsOutline,
+      goToNotifications,
     };
   }
 });
 </script>
-
 <style scoped>
 ion-content {
   --background: white;
@@ -347,6 +439,7 @@ ion-content {
   flex-direction: column;
   padding: 24px;
 }
+
 
 .top-section {
   width: 100%;
@@ -368,6 +461,21 @@ ion-content {
   display: grid;
   gap: 1px;
 }
+/* Ajoutez dans votre section style */
+.expiration-controls {
+  margin-top: 15px;
+  background: rgba(var(--ion-color-light-rgb), 0.3);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+ion-note {
+  display: block;
+  text-align: center;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: var(--ion-color-medium);
+}
 
 .info-row { 
   display: flex;
@@ -375,6 +483,7 @@ ion-content {
   font-size: 13px;
   color: #555;
 }
+
 
 .icon {
   margin-right: 8px;
@@ -388,7 +497,16 @@ ion-content {
   align-items: center;
   margin-bottom: 20px;
 }
+.expiration-controls {
+  margin: 15px 0;
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 8px;
+}
 
+.expiration-controls ion-item {
+  --background: transparent;
+}
 .list {
   background: transparent;
   width: 100%;
@@ -412,7 +530,18 @@ ion-content {
   --background: #dfc925;
   --color: #474646;
 }
+/* Dans le style du composant */
+.password-error {
+  color: var(--ion-color-danger);
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
 
+.password-success {
+  color: var(--ion-color-success);
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
 .back-button {
   margin-top: 20px;
   width: 100%;

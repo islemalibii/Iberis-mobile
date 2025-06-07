@@ -42,6 +42,18 @@
           </p>
         </div>
 
+        <div class="captcha-container">
+          <div
+            ref="hcaptchaElement"
+            class="h-captcha"
+            data-sitekey="584e15f0-a2b4-4314-ba44-e546d99ae57e"
+            data-callback="onCaptchaVerified"
+            data-error-callback="onCaptchaError"
+            data-expired-callback="onCaptchaExpired"
+          ></div>
+          <p v-if="captchaStatus" class="captcha-status">{{ captchaStatus }}</p>
+        </div>
+
         <div class="buttonContainer">
           <ion-button expand="block" @click="Signup" class="signupBtn">Sign up</ion-button>
         </div>
@@ -51,16 +63,107 @@
   </ion-page>
 </template>
 
-<script setup>
-import { onMounted } from "vue";
+<script setup lang="ts">
+import { onMounted, ref, nextTick } from "vue";
 import { useSignupController } from "@/controllers/SignupController";
-const { name, email, password, acceptTerms, errorMessage, Signup, initializeSocialLogins } =
+
+const { name, email, password, acceptTerms, errorMessage, Signup, initializeSocialLogins, setCaptchaToken } =
   useSignupController();
 
-onMounted(() => {
+const hcaptchaElement = ref<HTMLElement | null>(null);
+const captchaStatus = ref("Loading hCaptcha...");
+
+// Wait for hCaptcha to be available
+const waitForHCaptcha = (): Promise<any> => {
+  return new Promise((resolve) => {
+    if (window.hcaptcha) {
+      resolve(window.hcaptcha);
+      return;
+    }
+
+    const checkHCaptcha = () => {
+      if (window.hcaptcha) {
+        resolve(window.hcaptcha);
+      } else {
+        setTimeout(checkHCaptcha, 100);
+      }
+    };
+    
+    checkHCaptcha();
+  });
+};
+
+const initializeHCaptcha = async () => {
+  try {
+    console.log("Waiting for hCaptcha to load...");
+    captchaStatus.value = "Waiting for hCaptcha to load...";
+    
+    await waitForHCaptcha();
+    
+    console.log("hCaptcha available:", window.hcaptcha);
+    captchaStatus.value = "hCaptcha loaded, rendering widget...";
+    
+    await nextTick();
+    
+    if (hcaptchaElement.value) {
+      console.log("Rendering hCaptcha widget...");
+      window.hcaptcha.render(hcaptchaElement.value, {
+        sitekey: "584e15f0-a2b4-4314-ba44-e546d99ae57e",
+        callback: "onCaptchaVerified",
+        "error-callback": "onCaptchaError",
+        "expired-callback": "onCaptchaExpired"
+      });
+      captchaStatus.value = "hCaptcha widget rendered successfully!";
+      setTimeout(() => {
+        captchaStatus.value = "";
+      }, 3000);
+    } else {
+      console.error("hCaptcha element not found");
+      captchaStatus.value = "Error: hCaptcha element not found";
+    }
+  } catch (error) {
+    console.error("Error initializing hCaptcha:", error);
+    captchaStatus.value = `Error loading hCaptcha: ${error}`;
+  }
+};
+
+onMounted(async () => {
+  console.log("Component mounted, current URL:", window.location.href);
+  
+  // Initialize social logins first
   initializeSocialLogins();
+  
+  // Then initialize hCaptcha
+  await initializeHCaptcha();
 });
+
+declare global {
+  interface Window {
+    onCaptchaVerified: (token: string) => void;
+    onCaptchaError: (error: any) => void;
+    onCaptchaExpired: () => void;
+    hcaptcha: any;
+  }
+}
+
+window.onCaptchaVerified = function (token: string) {
+  console.log('hCaptcha verified successfully:', token);
+  setCaptchaToken(token);
+  captchaStatus.value = "✅ Captcha verified!";
+};
+
+window.onCaptchaError = function (error: any) {
+  console.error('hCaptcha error:', error);
+  captchaStatus.value = `❌ Captcha error: ${error}`;
+};
+
+window.onCaptchaExpired = function () {
+  console.log('hCaptcha expired');
+  setCaptchaToken("");
+  captchaStatus.value = "⏰ Captcha expired, please verify again";
+};
 </script>
+
 
 <style scoped>
 .ion-padding {
@@ -161,5 +264,41 @@ p {
   width: 150px;
 }
 
+.captcha-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 20px 0;
+  overflow: visible;
+}
 
+.h-captcha {
+  display: block !important;
+  visibility: visible !important;
+  min-height: auto;
+  max-width: 100%;
+  transform-origin: center;
+}
+
+/* Media query for mobile devices */
+@media screen and (max-width: 400px) {
+  .h-captcha {
+    transform: scale(0.85); /* Scale down slightly on mobile */
+    margin: 0 auto;
+  }
+}
+
+/* For very small screens */
+@media screen and (max-width: 340px) {
+  .h-captcha {
+    transform: scale(0.75); /* Scale down more on very small screens */
+  }
+}
+
+.captcha-status {
+  margin-top: 10px;
+  font-size: 14px;
+}   
 </style>

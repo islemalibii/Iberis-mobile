@@ -2,6 +2,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { login } from '@/services/authentification';
 import { Preferences } from '@capacitor/preferences';
+import { getUserCompanies } from '@/services/User';
+
 
 export const LoginController = () => {
   const router = useRouter();
@@ -18,6 +20,33 @@ export const LoginController = () => {
     } catch (error) {
       console.error('Token storage error:', error);
       throw new Error('Failed to store authentication token');
+    }
+  };
+  const storeCompanyId = async (companyId: string): Promise<void> => {
+    try {
+      await Preferences.set({ key: 'current_company_id', value: companyId });
+    } catch (error) {
+      console.error('Company ID storage error:', error);
+      throw new Error('Failed to store company ID');
+    }
+  };
+
+  const storeSalesParentJournal = async (journalId: string): Promise<void> => {
+    try {
+      await Preferences.set({ key: 'sales_parent_journal', value: journalId });
+      console.log('Stored sales parent journal ID:', journalId);
+    } catch (error) {
+      console.error('Sales parent journal ID storage error:', error);
+      throw new Error('Failed to store sales parent journal ID');
+    }
+  };
+  const storeDefaultSalesParentJournal = async (defaultjournalId: string): Promise<void> => {
+    try {
+      await Preferences.set({ key: 'default_sales_parent_journal', value: defaultjournalId });
+      console.log('Stored default sales journal ID:', defaultjournalId);
+    } catch (error) {
+      console.error('Default sales journal ID storage error:', error);
+      throw new Error('Failed to store default sales journal ID');
     }
   };
 
@@ -49,27 +78,63 @@ export const LoginController = () => {
 
   const handleLogin = async (): Promise<void> => {
     if (!validateForm()) return;
-    
     isLoading.value = true;
     errorMessage.value = '';
-
     try {
       const response = await login({
         email: email.value.trim(),
         password: password.value.trim()
       });
-
       const responseData = response.data;
+      if (!responseData.data?.token) {
+        throw new Error('Authentication token missing in response');
+      }
+      await storeAuthToken(responseData.data.token);
+      const userCompany = await getUserCompanies.fetchAndStoreUserCompanies(responseData.data.token);
+      console.log('Login successful. User data:', userCompany);
+
+
       switch (responseData.status?.code) {
         case 200: 
           if (responseData.data?.token) {
-            await storeAuthToken(responseData.data.token);
-            console.log("the token : ", responseData.data.token);
+            if (!userCompany.owned_companies || userCompany.owned_companies.length === 0) {
+              throw new Error('No companies found for this user');
+            }
+            const firstCompanyId = userCompany.owned_companies[0].company.hashed_id;
+            await storeCompanyId(firstCompanyId);
+
+            const firstCompany = userCompany.owned_companies[0].company;
+
+            if (firstCompany.accounting_settings) {
+              try {
+                const accountingSettings = JSON.parse(firstCompany.accounting_settings);
+                const salesParentJournalId = accountingSettings.salesParentJournal?.toString();
+                const defaultSalesJournalId = accountingSettings.salesDefaultJournal?.toString();
+
+
+                if (salesParentJournalId) {
+                  await storeSalesParentJournal(salesParentJournalId);
+                  console.log('Stored sales parent journal ID:', salesParentJournalId);
+                } else {
+                  console.warn('salesParentJournal not found in accounting settings');
+                }
+                if (defaultSalesJournalId) {
+                  await storeDefaultSalesParentJournal(defaultSalesJournalId);
+                  console.log('Stored default sales journal ID:', defaultSalesJournalId);
+                } else {
+                  console.warn('salesDefaultJournal not found in accounting settings');
+                }
+              } catch (parseError) {
+                console.error('Error parsing accounting_settings:', parseError);
+              }
+            } else {
+              console.warn('No accounting_settings found for the company');
+            }
+          
+
             router.push('/invoices');
-          } else {
-            throw new Error('Authentication token missing in response');
           }
-          break;
+        break;
 
         case 202: 
           break;
@@ -81,7 +146,6 @@ export const LoginController = () => {
             router.push('/create-company');
           }
           break;
-
         case 401: 
           errorMessage.value = 'Invalid credentials';
           break;
@@ -107,6 +171,10 @@ export const LoginController = () => {
         default:
           throw new Error(responseData.status?.message || 'Unexpected response from server');
       }
+      const token = await Preferences.get({ key: 'auth_token' });
+      const companyId = await Preferences.get({ key: 'current_company_id' });
+      console.log('Verification - Stored Token:', token.value);
+      console.log('Verification - Stored Company ID:', companyId.value);
     } catch (error: unknown) {
       console.error('Login error:', error);
       
@@ -115,9 +183,9 @@ export const LoginController = () => {
       } else {
         errorMessage.value = 'An unexpected error occurred during login';
       }
-    } finally {
-      isLoading.value = false;
     }
+
+    
   };
 
   const handleGoogleSignUp = async (response: any) => {
@@ -172,7 +240,6 @@ export const LoginController = () => {
   };
 
   return {
-    // State
     email,
     password,
     errorMessage,
@@ -180,7 +247,6 @@ export const LoginController = () => {
     passwordError,
     isLoading,
     
-    // Methods
     handleLogin,
     handleGoogleSignUp,
     handleFacebookLogin

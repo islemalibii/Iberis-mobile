@@ -1,278 +1,137 @@
 <template>
-    <ion-page>
-      <ion-header>
-        <ion-toolbar>
-          <ion-title>Iberis</ion-title>
-        </ion-toolbar>
-      </ion-header>
-      <ion-content :fullscreen="true">
-        <div class="payments-header">
-          <div class="title-container">
-            <ion-label class="title">Payments</ion-label>
-            <p class="company"> Payments : company name</p>
-          </div>
-          <ion-button class="addButton" @click="addPayment">New</ion-button>
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Iberis</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content :fullscreen="true">
+      <div class="payments-header">
+        <div class="title-container">
+          <ion-label class="title">Payments</ion-label>
+          <p class="company">Payments : {{ companyName }}</p>
         </div>
-        <ion-item class="search-bar" lines="none">
-          <div class="search-container">
-            <span class="search-label">Search:</span>
-            <ion-input v-model="searchQuery" placeholder="Search..." class="search-input"></ion-input>
-          </div>
+        <ion-button class="addButton" @click="addPayment">New</ion-button>
+      </div>
+      <ion-item class="search-bar" lines="none">
+        <div class="search-container">
+          <span class="search-label">Search:</span>
+          <ion-input v-model="searchQuery" placeholder="Search..." class="search-input"></ion-input>
+          <ion-button v-if="searchQuery" size="small" fill="clear" @click="searchQuery = ''" class="clear-button">
+            <ion-icon :icon="closeCircleOutline"></ion-icon>
+          </ion-button>
+        </div>
+        <div v-if="searchQuery && filteredPayments.length === 0" class="no-data">
+          <p>No payments found matching "{{ searchQuery }}"</p>
+      </div>
+      </ion-item>
+      <ion-list>
+        <ion-item 
+          v-for="payment in paginatedPayments" 
+          :key="payment.hashed_id"
+          button
+          @click="openPaymentModal(payment)">
+          <ion-label>
+            <h2 class="sales">{{ payment?.payment_number }}</h2>
+            <p>Client: {{ payment.contact.display_name }}</p>
+          </ion-label>
         </ion-item>
-        <ion-list>
-          <ion-item 
-            v-for="payment in paginatedPayments" 
-            :key="payment.id"
-            button
-            @click="openPaymentModal(payment)">
-            <ion-label>
-              <h2 class="sales">{{ payment.sales }}</h2>
-              <p>Client: {{ payment.client }}</p>
-            </ion-label>
-          </ion-item>
-        </ion-list>
-        <div class="pagination-controls">
-          <ion-button fill="clear" @click="prevPage" :disabled="currentPage === 1">
-              <ion-icon :icon="chevronBackOutline"></ion-icon>
-            </ion-button>
-            <span>Page {{ currentPage }} / {{ totalPages }}</span>
-            <ion-button fill="clear" @click="nextPage" :disabled="currentPage === totalPages.value">
-              <ion-icon :icon="chevronForwardOutline"></ion-icon>
-            </ion-button>
-        </div>
-        <ion-modal :is-open="isModalOpen" @did-dismiss="closeModal" class="payment-model">
+      </ion-list>
+      <div class="pagination-controls" v-if="hasPayments">
+        <ion-button fill="clear" @click="prevPage" :disabled="currentPage === 1">
+            <ion-icon :icon="chevronBackOutline"></ion-icon>
+          </ion-button>
+          <span>Page {{ currentPage }} / {{ totalPages }}</span>
+          <ion-button fill="clear" @click="nextPage" :disabled="currentPage === totalPages">
+            <ion-icon :icon="chevronForwardOutline"></ion-icon>
+          </ion-button>
+      </div>
+      <div v-else class="no-data">
+        <p>No payments found</p>
+      </div>
+      
+      <ion-modal :is-open="isModalOpen" @did-dismiss="closeModal" class="payment-model">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>{{ selectedPayment?.payment_number }}</ion-title>
+            <ion-buttons slot="end">
+              <ion-button @click="closeModal">
+                <ion-icon :icon="closeOutline"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="ion-padding">
+          <p><strong>Client:</strong> {{ selectedPayment?.contact.display_name }}</p>
+          <p><strong>Invoice N°:</strong> {{ selectedPayment?.invoices?.[0]?.invoice_number || 'N/A' }}</p>
+          <p><strong>Paid amount:</strong> {{ selectedPayment?.total }}</p>
+          <p><strong>Date:</strong> {{ formatDate(selectedPayment?.date) }}</p>
+
+          <ion-button class="actionButton" :id="`action-trigger-${selectedPayment?.hashed_id}`">Action</ion-button>
+          <ion-popover ref="actionPopover" :trigger="`action-trigger-${selectedPayment?.hashed_id}`" trigger-action="click">
+            <ion-content>
+              <ion-list class="actions">
+                <ion-item button detail="false" @click="handleAction('visualize', selectedPayment)">Preview</ion-item>
+                <ion-item button detail="false" @click="handleAction('modify', $event, selectedPayment)">Edit</ion-item>
+                <ion-item button detail="false" @click="handleAction('download', selectedPayment)">Download</ion-item>
+                <ion-item button detail="false" @click="handleAction('delete', selectedPayment)">Delete</ion-item>
+              </ion-list>
+            </ion-content>
+          </ion-popover>
+        </ion-content>
+      </ion-modal>
+
+      <ion-modal :is-open="isPdfModalOpen" @did-dismiss="() => { isPdfModalOpen = false; pdfUrl = null; }" class="pdf-modal">
           <ion-header>
             <ion-toolbar>
-              <ion-title>{{ selectedPayment?.sales }}</ion-title>
+              <ion-title>Payment PDF</ion-title>
               <ion-buttons slot="end">
-                <ion-button @click="closeModal">
+                <ion-button @click="() => { isPdfModalOpen = false; pdfUrl = null; }">
                   <ion-icon :icon="closeOutline"></ion-icon>
                 </ion-button>
               </ion-buttons>
             </ion-toolbar>
           </ion-header>
-          <ion-content class="ion-padding">
-            <p><strong>Client:</strong> {{ selectedPayment?.client }}</p>
-            <p><strong>Payment N°:</strong> {{ selectedPayment?.paymentNumber }}</p>
-            <p><strong>Paid amount:</strong> {{ selectedPayment?.amount }}</p>
-            <p><strong>Date:</strong> {{ formatDate(selectedPayment?.date) }}</p>
-
-            <ion-button class="actionButton" :id="`action-trigger-${selectedPayment?.id}`">Action</ion-button>
-            <ion-popover ref="actionPopover" :trigger="`action-trigger-${selectedPayment?.id}`" trigger-action="click">
-              <ion-content>
-                <ion-list class="actions">
-                  <ion-item button detail="false" @click="handleAction('visualize', selectedPayment)">Preview</ion-item>
-                  <ion-item button detail="false" @click="handleAction('modify', $event, selectedPayment)">Edit</ion-item>
-                  <ion-item button detail="false" @click="handleAction('download', selectedPayment)">Download</ion-item>
-                  <ion-item button detail="false" @click="handleAction('delete', selectedPayment)">Delete</ion-item>
-                </ion-list>
-              </ion-content>
-            </ion-popover>
+          <ion-content>
+            <iframe
+              v-if="pdfUrl"
+              :src="pdfUrl"
+              style="width: 100%; height: 100%; border: none"
+            ></iframe>
           </ion-content>
-        </ion-modal>
-      </ion-content>
-    </ion-page>
+      </ion-modal>
+    </ion-content>
+  </ion-page>
 </template>
-<script>
-import { chevronBackOutline, chevronForwardOutline, closeOutline } from 'ionicons/icons';
+<script setup lang="ts">
 import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
-  IonList, 
-  IonItem, 
-  IonLabel, 
-  IonAccordion, 
-  IonAccordionGroup, 
-  IonGrid, 
-  IonRow, 
-  IonCol, 
-  IonButton,
-  IonPopover
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, 
+  IonList, IonItem, IonLabel, IonButton, IonPopover, 
+  IonButtons, IonIcon, IonModal, IonInput
 } from '@ionic/vue';
-import { defineComponent, ref, computed } from 'vue';
-import { useRouter } from 'vue-router'; 
-export default defineComponent({
-  name: 'FacturesPage',
-  components: {
-    IonPage,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
-    IonList,
-    IonItem,
-    IonLabel,
-    IonAccordion,
-    IonAccordionGroup,
-    IonGrid,
-    IonRow,
-    IonCol,
-    IonButton,
-    IonPopover,
-  },
-  setup() {
-    const actionPopover = ref(null);
-    const currentPage = ref(1);
-    const paymentsPerPage = 7;
-    const router = useRouter();
-    const isModalOpen = ref(false);
-    const selectedPayment = ref(null);
-    const payments = ref([
-      {
-        id: 1,
-        sales: 'INV-2024-00001',
-        client: 'John Doeh',
-        date: '2025-03-01',
-        amount: '$75.00',
-        paymentNumber: 'PAY-S-2025-00001'
-      },
-      {
-        id: 2,
-        sales: 'INV-2024-00002',
-        client: 'John Doeh',
-        date: '2025-03-01',
-        amount: '$75.00',
-        paymentNumber: 'PAY-S-2025-00001'
-      },
-      {
-        id: 3,
-        sales: 'INV-2024-00003',
-        client: 'John Doeh',
-        date: '2025-03-01',
-        amount: '$75.00',
-        paymentNumber: 'PAY-S-2025-00001'
-      },
-      {
-        id: 4,
-        sales: 'INV-2024-00004',
-        client: 'John Doeh',
-        date: '2025-03-01',
-        amount: '$75.00',
-        paymentNumber: 'PAY-S-2025-00001'
-      },
-      {
-        id: 5,
-        sales: 'INV-2024-00005',
-        client: 'John Doeh',
-        date: '2025-03-01',
-        amount: '$75.00',
-        paymentNumber: 'PAY-S-2025-00001'
-      },
-      {
-        id: 6,
-        sales: 'INV-2024-00006',
-        client: 'John Doeh',
-        date: '2025-03-01',
-        amount: '$75.00',
-        paymentNumber: 'PAY-S-2025-00001'
-      },
-      {
-        id: 7,
-        sales: 'INV-2024-00007',
-        client: 'John Doeh',
-        date: '2025-03-01',
-        amount: '$75.00',
-        paymentNumber: 'PAY-S-2025-00001'
-      },
-      {
-        id: 8,
-        sales: 'INV-2024-00008',
-        client: 'John Doeh',
-        date: '2025-03-01',
-        amount: '$75.00',
-        paymentNumber: 'PAY-S-2025-00001'
-      },
-      {
-        id: 9,
-        sales: 'INV-2024-00009',
-        client: 'John Doeh',
-        date: '2025-03-01',
-        amount: '$75.00',
-        paymentNumber: 'PAY-S-2025-00001'
-      },
-      {
-        id: 10,
-        sales: 'INV-2024-00010',
-        client: 'John Doeh',
-        date: '2025-03-01',
-        amount: '$75.00',
-        paymentNumber: 'PAY-S-2025-00001'
-      }
-    ]);
-    function openPaymentModal(payment) {
-      selectedPayment.value = payment; 
-      isModalOpen.value = true;
-    }
-    function closeModal() {
-      isModalOpen.value = false;
-      selectedPayment.value = null;
-    }
-    const formatDate = (dateString) => {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    };
-    const totalPages = computed(() => Math.max(1, Math.ceil(payments.value.length / paymentsPerPage)));
-    const paginatedPayments = computed(() => {
-      const start = (currentPage.value - 1) * paymentsPerPage;
-      return payments.value.slice(start, start + paymentsPerPage);
-    });
-    const nextPage = () => {
-      if (currentPage.value < totalPages.value) {
-        currentPage.value++;
-      }
-    };
-    const prevPage = () => {
-      if (currentPage.value > 1) {
-        currentPage.value--;
-      }
-    };
-    const handleAction = async (action, $event, payment) => {
-      console.log(`Action selected: ${action}`, payment);
-      const target = event.target;
-      const popover = target.closest('ion-popover');
-      if (popover) {
-        await popover.dismiss();
-      }
-      if (action === "modify") {
-        isModalOpen.value = false;
-        router.push({
-          path: "/modify-payment",
-          query: { id: payment.id}
-        });
-      }
-    };
-    const addPayment = () => {
-      console.log('Add payment button clicked');
-      router.push('/create-payment');
-    };
-    return {
-      actionPopover,
-      currentPage,
-      totalPages,
-      paginatedPayments,
-      nextPage,
-      prevPage,
-      chevronBackOutline, 
-      chevronForwardOutline,
-      closeOutline,
-      isModalOpen,
-      openPaymentModal,
-      closeModal,
-      selectedPayment,
-      payments,
-      formatDate,
-      handleAction,
-      addPayment,
-    };
-  }
-});
+import { chevronBackOutline, chevronForwardOutline, closeOutline, closeCircleOutline } from 'ionicons/icons';
+import { PaymentsController } from '@/controllers/PaymentController';
+
+const {
+  currentPage,
+  totalPages,
+  paginatedPayments,
+  isModalOpen,
+  selectedPayment,
+  hasPayments,
+  searchQuery,
+  companyName,
+  isPdfModalOpen,
+  pdfUrl,
+  filteredPayments,
+  formatDate,
+  nextPage,
+  prevPage,
+  openPaymentModal,
+  closeModal,
+  handleAction,
+  addPayment
+} = PaymentsController();
 </script>
 <style scoped>
 :root {
@@ -463,15 +322,19 @@ ion-popover ion-item {
   .search-label {
     flex-shrink: 0; 
     font-weight: bold;
+    margin-right: 10px;
     margin: 0; 
     color: #000;
   }
   .search-input{
-    margin: 0; 
-    min-width: 0; 
     border: 1px solid #b7b5b5; 
     padding: 5px;
     border-radius: 5px;
+    font-size: 14px;
+  }
+  ion-input.search-input {
+    --color: #000000;
+    background-color: #ffffff;
   }
   .payment-model {
     --width: 90%;

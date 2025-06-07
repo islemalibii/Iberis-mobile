@@ -23,9 +23,28 @@ import AddFournisseur from '@/views/AddFournisseur.vue';
 import Fournisseur from '@/views/Fournisseur.vue';
 import EditFournisseur from '@/views/EditFournisseur.vue';
 import ClientDetail from '@/views/ClientDetail.vue';
-import ClientTransactions from '@/views/ClientTransactions.vue';
 import Dashboard from '@/views/Dashboard.vue';
-
+import SendInvoive from '@/views/SendInvoive.vue';
+import CompanyDetailsPage from '@/views/CompanyDetailsPage.vue';
+import NotificationsPage from '@/views/NotificationPage.vue';
+import Bonlivraison from '@/views/Bonlivraison.vue';
+import Editdeliverynotes from '@/views/Editdeliverynotes.vue';
+import Devis from '@/views/Devis.vue';
+import BonSortie from '@/views/BonSortie.vue';
+import EditBonsdeSortie from '@/views/EditBonsdeSortie.vue';
+import EditEstimate from '@/views/EditEstimate.vue';
+import FournisseurDetail from '@/views/FournisseurDetail.vue';
+import Bonsdereception from '@/views/Bonsdereception.vue';
+import EditReceipts from '@/views/EditReceipts.vue';
+import Order from '@/views/Order.vue';
+import Service from '@/views/Services.vue';
+import Purechase from '@/views/Purechase.vue';
+import CompanyBalanceView from '@/views/CompanyBalanceView.vue';
+import CompanyTurnoverView from '@/views/CompanyTurnoverView.vue';
+import RevenuesVsExpensesChart from '@/views/RevenuesVsExpnsesChart.vue';
+import ResultsChart from '@/views/ResultsChart.vue';
+import SalesChart from '@/views/SalesChart.vue';
+import Permessions from '@/views/Permissions.vue';
 
 
 
@@ -56,8 +75,36 @@ const routes: Array<RouteRecordRaw> = [
   component: ForgetPassword
   },
   {
+    path: '/companyBalance',
+    component: CompanyBalanceView
+  },
+  {
+    path: '/permessions',
+    component: Permessions
+    },
+       {
+    path: '/SalesChart',
+    component: SalesChart
+    },
+      {
+    path: '/ResultsChart',
+    component: ResultsChart
+    },
+     {
+    path: '/RevenuesVsExpenses',
+    component: RevenuesVsExpensesChart
+    },
+     {
+    path: '/CompanyTurnover',
+    component: CompanyTurnoverView
+  },
+  {
   path: '/verifytlph',
   component: Veriftelephone
+  },
+  {
+  path: '/purechase',
+  component: Purechase
   },
   {
   path: '/reset/check', 
@@ -72,17 +119,86 @@ const routes: Array<RouteRecordRaw> = [
     component: CreatecompanyPage
   },
   {
+    path: '/company-details',
+    component: CompanyDetailsPage
+  },
+  {
     path: '/invoices',
     component:InvoicesPage
   },
+  {
+    path: "/clients/:id/bonslivraison",
+    component: Bonlivraison, 
+  },
+  {
+    path: "/provider/:id/service",
+    component: Service, 
+  },
+  {
+    path: "/provider/:id/reciept",
+    component:Bonsdereception, 
+  },
+  {
+    path: "/provider/:id/order",
+    component:Order, 
+  },
+  {
+  path: '/provider/:id/receipt/:idreceipt/edit_receipt',
+  component: EditReceipts,
+  props: (route) => ({
+    ProviderId: route.params.id,
+    receiptId: route.params.idrece // Bien passer les deux IDs
+  })
+  },
+  {
+    path: "/clients/:id/bonsortie",
+    component:BonSortie, 
+  },
+
+  {
+    path: "/clients/:id/devis",
+    component: Devis, 
+  },
+
+  {
+  path: '/clients/:id/estimate/:idestimate/edit_estimate',
+  component: EditEstimate,
+  props: (route) => ({
+    clientId: route.params.id,
+    estimateId: route.params.idestimate // Bien passer les deux IDs
+  })
+  },
+  {
+    path: '/clients/:id/timeline',
+    component: () => import('@/views/ClientTimelineView.vue')
+  },
+  {
+  path: '/fournisseur/:id/timeline',
+  component: () => import('@/views/TimelineProvider.vue')
+  },
+  {
+    path: '/clients/:id/bonslivraison/:idbons/edit-delivery',
+    component: Editdeliverynotes,
+      props: true 
+  },
+  {
+    path: '/clients/:clientId/bonsortie/:id/edit-sortie',
+    name: 'EditExitVoucher',
+    component: EditBonsdeSortie,
+    props: true 
+  },
+
   {
     path: '/create-invoice',
     component:CreateinvoicePage
   },
   {
-    path: '/modify-invoice',
+    path: '/invoices/:id/modify-invoice',
     component:ModifyinvoicePage
   },
+  { path: "/invoices/:id/send-invoice",
+    component:SendInvoive
+   },
   {
     path: '/payments',
     component:PaymentsPage
@@ -92,7 +208,7 @@ const routes: Array<RouteRecordRaw> = [
     component:CreatepaymentPage
   },
   {
-    path: '/modify-payment',
+    path: '/payments/:id/modify-payment',
     component:ModifypaymentPage
   },
   {
@@ -104,33 +220,42 @@ const routes: Array<RouteRecordRaw> = [
     component:Clients
   },
   {
-    path: "/detailclient/:id",
+    path: "/client/:id",
     component:ClientDetail, 
   },
   {
-    path: "/client/:id/transactions",
-    component: ClientTransactions, 
+    path: '/notifications',
+    component:NotificationsPage,
   },
+  
   { path: "/add-client",
-     component:AddClient 
-    },
-  { path: "/edit-client/:id", 
-    component: EditClient, props: true 
-  }, 
+    component:AddClient 
+   },
+ { path: "/edit-client/:id", 
+   component: EditClient, props: true 
+ }, 
 
 { path: "/add-fournisseur",
-   component:AddFournisseur
-  },
+  component:AddFournisseur
+ },
 
 { path: "/fournisseur",
-   component:Fournisseur 
+  component:Fournisseur 
+ },
+ { path: "/edit-fournisseur/:id", 
+   component: EditFournisseur, props: true 
+ }, 
+   { path: "/client/:id", 
+   component:ClientDetail 
+ }, 
+   { path: "/fournisseur/:id", 
+   component:FournisseurDetail
+ }, 
+ { path: "/dashboard",
+   component:Dashboard
   },
-  { path: "/edit-fournisseur/:id", 
-    component: EditFournisseur, props: true 
-  }, 
-  { path: "/dashboard",
-    component:Dashboard
-   },
+
+
 ]
 
 const router = createRouter({

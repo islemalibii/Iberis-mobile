@@ -2,303 +2,343 @@
   <ion-page>
     <ion-content>
       <div class="container">
-        <!-- Logo de l'application -->
         <div class="logo-container">
-          <a href="clients"> <!-- Remplacez "/" par l'URL de destination souhaitée -->
-    <img src="../assets/logo-iberis.png" alt="Logo Iberis" class="logo" />
-  </a>        </div>
+          <img src="../assets/logo-iberis.png" alt="Logo Iberis" class="logo" @click="goBack" />
+        </div>
 
         <div class="content-wrapper">
           <h1 class="heading">Nouveau Client</h1>
 
-          <!-- Formulaire pour ajouter un client -->
           <form @submit.prevent="submitClient">
-            <!-- Informations générales -->
+            <!-- 1. Informations générales -->
             <ion-accordion-group>
-              <ion-accordion value="generalInfo">
+              <ion-accordion value="generalInfo" :disabled="isLoadingAdd">
                 <ion-item slot="header" class="accordion-header">
                   <ion-icon :icon="person" slot="start"></ion-icon>
-                  <ion-label>Informations générales</ion-label>
+                  <ion-label>1. Informations générales</ion-label>
                 </ion-item>
-                <div slot="content" class="accordion-content">
+                <div slot="content">
                   <ion-list>
-                    <ion-item class="item">
-                      <ion-label position="stacked">Titre</ion-label>
-                      <ion-select v-model="client.title" placeholder="Sélectionnez un titre">
-                        <ion-select-option value="Mr.">Mr.</ion-select-option>
-                        <ion-select-option value="Mme.">Mme.</ion-select-option>
+                    <!-- Titre (Mr/Mlle/Mme) -->
+                    <ion-item>
+                      <ion-label position="stacked">Titre*</ion-label>
+                      <ion-select v-model="clientForm.title" interface="popover" required>
+                        <ion-select-option value="1">Mr.</ion-select-option>
+                        <ion-select-option value="2">Mlle.</ion-select-option>
+                        <ion-select-option value="3">Mme.</ion-select-option>
                       </ion-select>
                     </ion-item>
-                    <ion-item class="item">
-                      <ion-label position="stacked">Prénom</ion-label>
-                      <ion-input v-model="client.firstName" required></ion-input>
+
+                    <!-- Prénom (requis) -->
+                    <ion-item>
+                      <ion-label position="stacked">Prénom*</ion-label>
+                      <ion-input v-model="clientForm.first_name" required></ion-input>
                     </ion-item>
-                    <ion-item class="item">
+
+                    <!-- Nom de famille -->
+                    <ion-item>
                       <ion-label position="stacked">Nom de famille</ion-label>
-                      <ion-input v-model="client.lastName" required></ion-input>
+                      <ion-input v-model="clientForm.last_name"></ion-input>
                     </ion-item>
+
+                    <!-- Entreprise -->
+                 <ion-item>
+    <ion-label position="stacked">
+      Entreprise
+      <span v-if="clientForm.display_name === DisplayNameType.COMPANY">*</span>
+    </ion-label>
+    <ion-input 
+      v-model="clientForm.organisation" 
+      :required="clientForm.display_name === DisplayNameType.COMPANY"
+    ></ion-input>
+  </ion-item>
+
                     <ion-item class="item">
-                      <ion-label position="stacked">Entreprise</ion-label>
-                      <ion-input v-model="client.company"></ion-input>
+                      <ion-label position="stacked">Nom affiché (*)</ion-label>
+                      <ion-select 
+                        v-model="clientForm.display_name" 
+                        interface="action-sheet"
+                        required
+                      >
+                        <ion-select-option :value="DisplayNameType.COMPANY">
+                          {{ clientForm.organisation || 'Entreprise' }}
+                        </ion-select-option>
+                        <ion-select-option :value="DisplayNameType.FIRSTNAME_LASTNAME">
+                          {{ `${clientForm.first_name || 'Prénom'} ${clientForm.last_name || ''}`.trim() }}
+                        </ion-select-option>
+                        <ion-select-option :value="DisplayNameType.LASTNAME_FIRSTNAME">
+                          {{ `${clientForm.last_name || ''}, ${clientForm.first_name || 'Prénom'}`.replace(/^,\s*/, '').replace(/,\s*$/, '') }}
+                        </ion-select-option>
+                      </ion-select>
                     </ion-item>
-                    <ion-item class="item">
+
+                    <!-- Référence -->
+                    <ion-item>
+                      <ion-label position="stacked">Référence</ion-label>
+                      <ion-input v-model="clientForm.reference"></ion-input>
+                    </ion-item>
+
+                    <!-- Email -->
+                    <ion-item>
                       <ion-label position="stacked">Email</ion-label>
-                      <ion-input v-model="client.email" type="email" required></ion-input>
+                      <ion-input v-model="clientForm.email" type="email"></ion-input>
                     </ion-item>
-                    <ion-item class="item">
+
+                    <!-- Téléphone -->
+                    <ion-item>
                       <ion-label position="stacked">Téléphone</ion-label>
-                      <ion-input v-model="client.phone" type="tel" required></ion-input>
+                      <ion-input v-model="clientForm.phone" type="tel"></ion-input>
                     </ion-item>
-                    <ion-item class="item">
-                      <ion-label position="stacked">Site Internet</ion-label>
-                      <ion-input v-model="client.website" type="url"></ion-input>
+
+                    <!-- Site internet -->
+                    <ion-item>
+                      <ion-label position="stacked">Site internet</ion-label>
+                      <ion-input v-model="clientForm.website" type="url"></ion-input>
                     </ion-item>
                   </ion-list>
                 </div>
               </ion-accordion>
             </ion-accordion-group>
 
-            <!-- Informations professionnelles -->
+            <!-- 2. Informations professionnelles -->
             <ion-accordion-group>
-              <ion-accordion value="professionalInfo">
+              <ion-accordion value="professionalInfo" :disabled="isLoadingAdd">
                 <ion-item slot="header" class="accordion-header">
                   <ion-icon :icon="briefcase" slot="start"></ion-icon>
-                  <ion-label>Informations professionnelles</ion-label>
+                  <ion-label>2. Informations professionnelles</ion-label>
                 </ion-item>
-                <div slot="content" class="accordion-content">
+                <div slot="content">
                   <ion-list>
-                    <ion-item class="item">
-                      <ion-label position="stacked">Type</ion-label>
-                      <ion-select v-model="client.professionalInfo.type" placeholder="Sélectionnez un type">
-                        <ion-select-option value="Entreprise">Entreprise</ion-select-option>
-                        <ion-select-option value="Particulier">Particulier</ion-select-option>
+                    <!-- Type de client -->
+                    <ion-item>
+                      <ion-label position="stacked">Type de client*</ion-label>
+                      <ion-select v-model="clientForm.type" interface="popover" required>
+                        <ion-select-option :value="1">Professionnel</ion-select-option>
+                        <ion-select-option :value="2">Particulier</ion-select-option>
                       </ion-select>
                     </ion-item>
-                    <ion-item class="item">
-                      <ion-label position="stacked">Grille des Prix</ion-label>
-                      <ion-input v-model="client.professionalInfo.priceGrid"></ion-input>
+
+                    <!-- Numéro d'identification fiscale -->
+                    <ion-item>
+                      <ion-label position="stacked">Numéro fiscal</ion-label>
+                      <ion-input v-model="clientForm.fiscalId"></ion-input>
                     </ion-item>
-                    <ion-item class="item">
-                      <ion-label position="stacked">Numéro d'identification fiscale</ion-label>
-                      <ion-input v-model="client.professionalInfo.taxIdentificationNumber"></ion-input>
+
+                    <!-- Activité -->
+                    <ion-item>
+                      <ion-label position="stacked">Activité*</ion-label>
+                      <ion-select 
+                        v-model="clientForm.activityId" 
+                        interface="popover"
+                        required
+                      >
+                        <ion-select-option 
+                          v-for="activity in activities" 
+                          :key="activity.hashed_id" 
+                          :value="activity.hashed_id"
+                        >
+                          {{ activity.title }}
+                        </ion-select-option>
+                      </ion-select>
                     </ion-item>
-                    <ion-item class="item">
-                      <ion-label position="stacked">Activité</ion-label>
-                      <ion-input v-model="client.professionalInfo.activity"></ion-input>
+
+                    <!-- Devise -->
+                    <ion-item>
+                      <ion-label position="stacked">Devise*</ion-label>
+                      <ion-select 
+                        v-model="clientForm.currencyId" 
+                        interface="popover"
+                        required
+                      >
+                        <ion-select-option 
+                          v-for="currency in currencies" 
+                          :key="currency.hashed_id" 
+                          :value="currency.hashed_id"
+                        >
+                          {{ currency.title }} ({{ currency.symbol }})
+                        </ion-select-option>
+                      </ion-select>
                     </ion-item>
-                    <ion-item class="item">
-                      <ion-label position="stacked">Agence ou société commerciale</ion-label>
-                      <ion-input v-model="client.professionalInfo.agencyOrCommercialCompany"></ion-input>
-                    </ion-item>
-                    <ion-item class="item">
-                      <ion-label position="stacked">Devise</ion-label>
-                      <ion-input v-model="client.professionalInfo.currency" value="Dinar(s) tunisien" readonly></ion-input>
-                    </ion-item>
-                    <ion-item class="item">
+
+                    <!-- Conditions de paiement -->
+                    <ion-item>
                       <ion-label position="stacked">Conditions de paiement</ion-label>
-                      <ion-input v-model="client.professionalInfo.paymentTerms" value="Payable à réception" readonly></ion-input>
+                      <ion-select 
+                        v-model="clientForm.paymentTerms"
+                        :disabled="isLoadingPaymentTerms"
+                        interface="popover"
+                      >
+                        <ion-select-option 
+                          v-if="isLoadingPaymentTerms" 
+                          value="" 
+                          disabled
+                        >
+                          Chargement...
+                        </ion-select-option>
+                        <ion-select-option 
+                          v-else-if="paymentTerms.length === 0" 
+                          value="" 
+                          disabled
+                        >
+                          Aucune condition disponible
+                        </ion-select-option>
+                        <ion-select-option 
+                          v-for="term in paymentTerms" 
+                          :key="term.hashed_id" 
+                          :value="term.hashed_id"
+                        >
+                          {{ term.title }} ({{ term.days >= 0 ? term.days + ' jours' : 'Fin de mois' }})
+                        </ion-select-option>
+                      </ion-select>
                     </ion-item>
                   </ion-list>
                 </div>
               </ion-accordion>
             </ion-accordion-group>
 
-            <!-- Remarques -->
+            <!-- 3. Remarques -->
             <ion-accordion-group>
-              <ion-accordion value="remarks">
+              <ion-accordion value="remarks" :disabled="isLoadingAdd">
                 <ion-item slot="header" class="accordion-header">
                   <ion-icon :icon="documentText" slot="start"></ion-icon>
-                  <ion-label>Remarques</ion-label>
+                  <ion-label>3. Remarques</ion-label>
                 </ion-item>
-                <div slot="content" class="accordion-content">
+                <div slot="content">
                   <ion-list>
-                    <ion-item class="item">
-                      <ion-label position="stacked">Remarques</ion-label>
-                      <ion-textarea v-model="client.remarks"></ion-textarea>
+                    <ion-item>
+                      <ion-textarea v-model="clientForm.notes" placeholder="Ajoutez vos remarques ici..." rows="4"></ion-textarea>
                     </ion-item>
                   </ion-list>
                 </div>
               </ion-accordion>
             </ion-accordion-group>
 
-            <!-- Adresse de facturation -->
+            <!-- 4. Adresse de facturation -->
             <ion-accordion-group>
-              <ion-accordion value="billingAddress">
+              <ion-accordion value="billingAddress" :disabled="isLoadingAdd">
                 <ion-item slot="header" class="accordion-header">
                   <ion-icon :icon="home" slot="start"></ion-icon>
-                  <ion-label>Adresse de facturation</ion-label>
+                  <ion-label>4. Adresse de facturation</ion-label>
                 </ion-item>
-                <div slot="content" class="accordion-content">
+                <div slot="content">
                   <ion-list>
-                    <ion-item class="item">
+                    <ion-item>
                       <ion-label position="stacked">Adresse</ion-label>
-                      <ion-input v-model="client.billingAddress.address"></ion-input>
+                      <ion-input v-model="clientForm.billingAddress.address"></ion-input>
                     </ion-item>
-                    <ion-item class="item">
+                    <ion-item>
                       <ion-label position="stacked">Gouvernorat</ion-label>
-                      <ion-input v-model="client.billingAddress.governorate"></ion-input>
+                      <ion-input v-model="clientForm.billingAddress.governorate"></ion-input>
                     </ion-item>
-                    <ion-item class="item">
+                    <ion-item>
                       <ion-label position="stacked">Code postal</ion-label>
-                      <ion-input v-model="client.billingAddress.postalCode"></ion-input>
+                      <ion-input v-model="clientForm.billingAddress.postalCode"></ion-input>
                     </ion-item>
-                    <ion-item class="item">
+                    <ion-item>
                       <ion-label position="stacked">Pays</ion-label>
-                      <ion-input v-model="client.billingAddress.country" value="Tunisie" readonly></ion-input>
+                      <ion-input v-model="clientForm.billingAddress.country" value="Tunisie" readonly></ion-input>
                     </ion-item>
                   </ion-list>
                 </div>
               </ion-accordion>
             </ion-accordion-group>
 
-            <!-- Adresse de livraison -->
+            <!-- 5. Adresse de livraison -->
             <ion-accordion-group>
-              <ion-accordion value="deliveryAddress">
+              <ion-accordion value="deliveryAddress" :disabled="isLoadingAdd">
                 <ion-item slot="header" class="accordion-header">
                   <ion-icon :icon="location" slot="start"></ion-icon>
-                  <ion-label>Adresse de livraison</ion-label>
+                  <ion-label>5. Adresse de livraison</ion-label>
                 </ion-item>
-                <div slot="content" class="accordion-content">
+                <div slot="content">
                   <ion-list>
-                    <ion-item class="item">
+                    <ion-item>
                       <ion-label position="stacked">Adresse</ion-label>
-                      <ion-input v-model="client.deliveryAddress.address"></ion-input>
+                      <ion-input v-model="clientForm.deliveryAddress.address"></ion-input>
                     </ion-item>
-                    <ion-item class="item">
+                    <ion-item>
                       <ion-label position="stacked">Gouvernorat</ion-label>
-                      <ion-input v-model="client.deliveryAddress.governorate"></ion-input>
+                      <ion-input v-model="clientForm.deliveryAddress.governorate"></ion-input>
                     </ion-item>
-                    <ion-item class="item">
+                    <ion-item>
                       <ion-label position="stacked">Code postal</ion-label>
-                      <ion-input v-model="client.deliveryAddress.postalCode"></ion-input>
+                      <ion-input v-model="clientForm.deliveryAddress.postalCode"></ion-input>
                     </ion-item>
-                    <ion-item class="item">
+                    <ion-item>
                       <ion-label position="stacked">Pays</ion-label>
-                      <ion-input v-model="client.deliveryAddress.country" value="Tunisie" readonly></ion-input>
+                      <ion-input v-model="clientForm.deliveryAddress.country" value="Tunisie" readonly></ion-input>
                     </ion-item>
                   </ion-list>
                 </div>
               </ion-accordion>
             </ion-accordion-group>
 
-            <!-- Bouton pour soumettre le formulaire -->
-            <ion-button expand="full" type="submit" class="submit-button">Ajouter</ion-button>
+            <!-- Bouton de soumission -->
+            <ion-button 
+              expand="block" 
+              type="submit" 
+              :disabled="isLoadingAdd"
+              class="submit-button"
+            >
+              <ion-spinner v-if="isLoadingAdd" name="crescent"></ion-spinner>
+              {{ isLoadingAdd ? 'Enregistrement...' : 'Enregistrer le client' }}
+            </ion-button>
           </form>
         </div>
       </div>
-
-      <!-- Bouton de retour -->
-      <ion-button fill="clear" @click="goBack" class="back-button">
-        <ion-icon :icon="arrowBack"></ion-icon>
-        Retour
-      </ion-button>
     </ion-content>
   </ion-page>
 </template>
 
-<script>
+<script setup lang="ts">
 import {
-  IonPage,
-  IonContent,
-  IonList,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonSelect,
-  IonSelectOption,
-  IonTextarea,
-  IonButton,
-  IonIcon,
-  IonAccordion,
-  IonAccordionGroup,
-} from "@ionic/vue";
-import { arrowBack, person, briefcase, documentText, home, location } from "ionicons/icons";
-import axios from "axios";
+  IonPage, IonContent, IonButton, IonIcon, IonList, IonItem,
+  IonLabel, IonInput, IonSelect, IonSelectOption, IonTextarea,
+  IonAccordion, IonAccordionGroup, IonSpinner
+} from '@ionic/vue';
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useClientController } from '@/controllers/ClientController';
+import { person, briefcase, documentText, home, location } from 'ionicons/icons';
+import { DisplayNameType } from '@/models/ClientModel';
 
-export default {
-  components: {
-    IonPage,
-    IonContent,
-    IonList,
-    IonItem,
-    IonLabel,
-    IonInput,
-    IonSelect,
-    IonSelectOption,
-    IonTextarea,
-    IonButton,
-    IonIcon,
-    IonAccordion,
-    IonAccordionGroup,
-  },
-  data() {
-    return {
-      client: {
-        title: "",
-        firstName: "",
-        lastName: "",
-        company: "",
-        email: "",
-        phone: "",
-        website: "",
-        professionalInfo: {
-          type: "",
-          priceGrid: "",
-          taxIdentificationNumber: "",
-          activity: "",
-          agencyOrCommercialCompany: "",
-          currency: "Dinar(s) tunisien",
-          paymentTerms: "Payable à réception",
-        },
-        remarks: "",
-        billingAddress: {
-          address: "",
-          governorate: "",
-          postalCode: "",
-          country: "Tunisie",
-        },
-        deliveryAddress: {
-          address: "",
-          governorate: "",
-          postalCode: "",
-          country: "Tunisie",
-        },
-      },
-    };
-  },
-  methods: {
-    async submitClient() {
-      try {
-        const lang = this.$route.params.lang; // Langue dynamique
-        const companyId = this.$route.params.companyId; // ID de l'entreprise
-        await axios.post(
-          `/${lang}/api/public/company/${companyId}/client/new`,
-          this.client
-        );
-        this.$router.push("/clients"); // Rediriger vers la liste des clients
-      } catch (error) {
-        console.error("Erreur lors de l'ajout du client:", error);
-      }
-    },
-    goBack() {
-      this.$router.push("/clients"); // Retour à la liste des clients
-    },
-  },
-  setup() {
-    return {
-      arrowBack,
-      person,
-      briefcase,
-      documentText,
-      home,
-      location,
-    };
-  },
+const router = useRouter();
+const {
+  activities,
+  currencies,
+  paymentTerms,
+  isLoadingPaymentTerms,
+  isLoadingAdd,
+  clientForm,
+  addNewClient,
+  loadPaymentTerms
+} = useClientController();
+
+const submitClient = async () => {
+  try {
+    await addNewClient();
+  } catch (error) {
+    console.error("Erreur lors de l'ajout du client:", error);
+  }
+};
+
+onMounted(async () => {
+  try {
+    await loadPaymentTerms();
+  } catch (error) {
+    console.error("Erreur lors de l'initialisation:", error);
+  }
+});
+
+
+const goBack = () => {
+  router.back();
 };
 </script>
+
 <style scoped>
-  ion-content {
-  --background: #ffffff; /* Fond blanc */
+ion-content {
+  --background: #ffffff;
 }
 
 .container {
@@ -322,120 +362,100 @@ export default {
   max-width: 800px;
   width: 100%;
   text-align: center;
-  color: #000000; /* Texte noir */
-}
-
-.back-button {
-  --color: #000000; /* Couleur du bouton de retour en noir */
-  margin-bottom: 20px;
+  color: #000000;
 }
 
 .heading {
   font-size: 2rem;
   line-height: 1.8;
-  color: #dac136; /* Couleur jaune pour le titre */
+  color: #dac136;
   margin-bottom: 1.5rem;
   font-weight: 550;
 }
 
-/* Style pour le formulaire */
 form {
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
 }
 
-/* Style pour les groupes d'accordéons */
 ion-accordion-group {
   margin-bottom: 16px;
   border-radius: 13px;
   overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Ombre légère */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Style pour les en-têtes d'accordéons */
 ion-accordion {
-  --background: #e4e7ca; /* Fond blanc */
+  --background: #e4e7ca;
   --border-radius: 12px;
 }
 
 .accordion-header {
-  --background: #ffffff; /* Fond blanc */
-  --color: #000000; /* Texte noir */
+  --background: #ffffff;
+  --color: #000000;
   --border-radius: 12px;
   margin-bottom: -2px;
   font-family: 'Courier New', Courier, monospace;
-
 }
 
 .accordion-header ion-icon {
-  color: #000000; /* Couleur jaune pour les icônes */
+  color: #000000;
 }
 
 .accordion-header:hover {
-  --background: #edc84e; /* Fond jaune clair au survol */
+  --background: #edc84e;
 }
 
-/* Style pour le contenu des accordéons */
 .accordion-content {
   padding: 16px;
-  background: #ffffff; /* Fond jaune clair pour le contenu */
+  background: #ffffff;
   border-radius: 0 0 12px 12px;
 }
 
-/* Style pour la liste */
 ion-list {
-  background: #ffffff; /* Fond blanc */
+  background: #ffffff;
   border-radius: 12px;
   padding: 16px;
 }
 
-/* Style pour les éléments de la liste */
 ion-item {
-  --background: #ffffff;; /* Fond blanc */
-  --color: #000000; /* Texte noir */
+  --background: #ffffff;
+  --color: #000000;
   --border-radius: 12px;
   --padding-start: 16px;
   --inner-padding-end: 16px;
   margin-bottom: 16px;
   font-size: 1.1rem;
-
 }
 
 ion-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Ombre légère */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Style pour les labels */
 ion-label {
-  color: #000000; /* Texte noir */
-  
-  
+  color: #000000;
 }
 
-/* Style pour les inputs, selects et textareas */
 ion-input, ion-select, ion-textarea {
-  color: #000000; /* Texte noir */
-  
+  color: #000000;
 }
 
-/* Style pour le bouton de soumission */
 .submit-button {
-  --background: #f0d952; /* Fond jaune */
-  --color: #000000; /* Texte noir */
-  font-family:Arial, Helvetica, sans-serif;
+  --background: #f0d952;
+  --color: #000000;
+  font-family: Arial, Helvetica, sans-serif;
   font-weight: 680;
   margin-top: 105px;
   max-width: 150px;
   margin-left: auto;
   margin-right: auto;
   --border-radius: 12px;
-
 }
 
 .submit-button:hover {
-  --background: #e3cd53; /* Jaune plus foncé au survol */
+  --background: #e3cd53;
   transform: scale(1.05);
 }
-  </style>
+</style>

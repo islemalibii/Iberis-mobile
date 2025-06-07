@@ -1,0 +1,73 @@
+export interface Disbursement {
+    date: string;
+    status: number;
+    reference_number: string | null;
+    conditions: string;
+    totals: string;
+    notes: string | null;
+    display: string; 
+    currency_rate: number;
+    language: string;
+    created_at: string;
+    updated_at: string;
+    source_type: number;
+    unpaid: number;
+    toPay: string;
+    nonFormattedToPay: number;
+    formattedTotal: string;
+    hashed_id: string;
+    hashed_contact_id: string;
+    paid: number;
+    hashed_contact_additional_id: string | null;
+    hashed_company_id: string;
+    hashed_invoice_id: string;
+    hashed_journal_entry_id: string;
+    hashed_source_bank_id: string | null;
+    contact: {
+        title: number;
+        role: number;
+        email: string;
+        first_name: string;
+        last_name: string;
+        organisation: string | null;
+        display_name: string;
+        fiscal_id: string | null;
+        phone: string | null;
+        website: string | null;
+        note: string | null;
+        created_at: string;
+        updated_at: string;
+        type: number;
+        personal_id: string | null;
+        personal_id_date: string | null;
+        reference: string;
+        hashed_id: string;
+        hashed_activity_id: string;
+        hashed_currency_id: string;
+        unpaid: number;
+        has_external_access: number;
+        hashed_company_id: string;
+        hashed_default_items_price_list_id: string;
+        hashed_default_invoice_deadline_id: string;
+        billing: string; // JSON string
+        delivery: string; // JSON string
+        hashed_journal_id: string;
+        deposit_balance: number;
+        currency: {
+            priority: number;
+            iso_code: string;
+            title: string;
+            symbol: string;
+            subunit: string;
+            subunit_to_unit: number;
+            symbol_first: number;
+            html_entity: string;
+            decimal_mark: string;
+            thousands_separator: string;
+            iso_numeric: number;
+            created_at: string;
+            updated_at: string;
+            hashed_id: string;
+        };
+    };
+}

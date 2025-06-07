@@ -78,7 +78,14 @@ export function useSignupController() {
   const password = ref("");
   const acceptTerms = ref(false);
   const errorMessage = ref("");
+  const captchaToken = ref("");
   const router = useRouter();
+
+  const setCaptchaToken = (token: string) => {
+    captchaToken.value = token;
+  };
+
+
   const checkConditions = () => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email.value || !name.value || !password.value) {
@@ -112,6 +119,8 @@ export function useSignupController() {
           email: email.value,
           password: password.value,
           terms: true,
+          "h-captcha-response": captchaToken,
+
         },
       );
 
@@ -127,7 +136,7 @@ export function useSignupController() {
           path: "/verify",
           query: {
             email: email.value,
-            hashedId: response.data.data.user.hashed_id,
+            hashedId: response.data.data?.user?.hashed_id,
           },
         });
         return;
@@ -339,6 +348,7 @@ export function useSignupController() {
     password,
     acceptTerms,
     errorMessage,
+    setCaptchaToken,
     Signup, 
     handleGoogleSignUp,
     handleFacebookLogin,

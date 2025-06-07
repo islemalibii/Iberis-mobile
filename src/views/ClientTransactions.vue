@@ -11,7 +11,6 @@
         <div class="content-wrapper">
           <h1 class="heading">Historique des transactions</h1>
 
-          <!-- Indicateur de chargement -->
           <div v-if="isLoading" class="loading">
             <ion-spinner name="crescent"></ion-spinner>
             <p>Chargement en cours...</p>

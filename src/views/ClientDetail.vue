@@ -1,44 +1,33 @@
 <template>
   <ion-page>
-    <ion-content>
+    <ion-content class="ion-padding">
       <div class="container">
-        <!-- Logo de l'application -->
+        <!-- Logo et header -->
         <div class="logo-container">
-          <a href="clients">
+          <router-link to="/clients">
             <img src="../assets/logo-iberis.png" alt="Logo Iberis" class="logo" />
-          </a>
+          </router-link>
         </div>
 
-        <!-- Section des détails du client en haut -->
-        <div class="client-summary">
+        <!-- Section résumé client -->
+        <div class="client-summary" v-if="client">
           <div class="summary-header">
-            <h2 class="summary-title">A company</h2>
-            <p class="summary-subtitle">ahmed</p>
+            <h2 class="summary-title">{{ client.display_name }}</h2>
             <div class="summary-item">
               <ion-icon :icon="mailOutline" class="summary-icon"></ion-icon>
-              <p class="summary-text">chattaoui@hotmail.com</p>
+              <p class="summary-text">{{ client.email || 'Non renseigné' }}</p>
             </div>
           </div>
 
           <div class="summary-grid">
             <div class="summary-item">
               <ion-icon :icon="walletOutline" class="summary-icon"></ion-icon>
-              <p class="summary-text"><strong>Solde :</strong> 5.475,00 €</p>
+              <p><strong>Solde :</strong> {{ formatCurrency(client.unpaid || 0) }}</p>
             </div>
 
             <div class="summary-item">
               <ion-icon :icon="cashOutline" class="summary-icon"></ion-icon>
-              <p class="summary-text"><strong>Paiements reçus :</strong> 240.000 TND</p>
-            </div>
-
-            <div class="summary-item">
-              <ion-icon :icon="documentTextOutline" class="summary-icon"></ion-icon>
-              <p class="summary-text"><strong>Factures :</strong> 5,106.000 TND</p>
-            </div>
-
-            <div class="summary-item">
-              <ion-icon :icon="receiptOutline" class="summary-icon"></ion-icon>
-              <p class="summary-text"><strong>Factures d'avoir :</strong> 0.000 TND</p>
+              <p class="summary-text"><strong>Téléphone :</strong> {{ client.phone || 'Non renseigné' }}</p>
             </div>
           </div>
         </div>
@@ -48,7 +37,7 @@
         </div>
 
         <!-- Détails du client -->
-        <div class="client-details">
+        <div class="client-details" v-if="client">
           <!-- Informations de base -->
           <ion-card class="info-card">
             <ion-card-header>
@@ -58,11 +47,10 @@
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
-              <p><strong>Nom complet :</strong> {{ client.title }} {{ client.firstName }} {{ client.lastName }}</p>
-              <p><strong>Entreprise :</strong> {{ client.company }}</p>
-              <p><strong>Email :</strong> {{ client.email }}</p>
-              <p><strong>Téléphone :</strong> {{ client.phone }}</p>
-              <p><strong>Site web :</strong> {{ client.website }}</p>
+              <p><strong>Nom complet :</strong> {{ client.display_name }}</p>
+              <p><strong>Email :</strong> {{ client.email || 'Non renseigné' }}</p>
+              <p><strong>Téléphone :</strong> {{ client.phone || 'Non renseigné' }}</p>
+              <p><strong>Créé le :</strong> {{ formatDate(client.created_at) }}</p>
             </ion-card-content>
           </ion-card>
 
@@ -75,13 +63,11 @@
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
-              <p><strong>Type :</strong> {{ client.professionalInfo.type }}</p>
-              <p><strong>Grille tarifaire :</strong> {{ client.professionalInfo.priceGrid }}</p>
-              <p><strong>Numéro d'identification fiscale :</strong> {{ client.professionalInfo.taxIdentificationNumber }}</p>
-              <p><strong>Activité :</strong> {{ client.professionalInfo.activity }}</p>
-              <p><strong>Agence ou société commerciale :</strong> {{ client.professionalInfo.agencyOrCommercialCompany }}</p>
-              <p><strong>Devise :</strong> {{ client.professionalInfo.currency }}</p>
-              <p><strong>Conditions de paiement :</strong> {{ client.professionalInfo.paymentTerms }}</p>
+              <p><strong>Type :</strong> {{ client.type === 1 ? 'Professionnel' : 'Particulier' }}</p>
+              <p><strong>Référence :</strong> {{ client.reference || 'Non renseigné' }}</p>
+              <p><strong>Activité :</strong> {{ getActivityName(client.hashed_activity_id) }}</p>
+              <p><strong>Devise :</strong> {{ getCurrencyName(client.hashed_currency_id) }}</p>
+              <p><strong>Conditions de paiement :</strong> {{ getPaymentTermName(client.hashed_default_invoice_deadline_id) }}</p>
             </ion-card-content>
           </ion-card>
 
@@ -94,15 +80,18 @@
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
-              <p><strong>Adresse :</strong> {{ client.billingAddress.address }}</p>
-              <p><strong>Gouvernorat :</strong> {{ client.billingAddress.governorate }}</p>
-              <p><strong>Code postal :</strong> {{ client.billingAddress.postalCode }}</p>
-              <p><strong>Pays :</strong> {{ client.billingAddress.country }}</p>
+              <p><strong>Adresse :</strong> {{ client.billing.address || 'Non renseigné' }}</p>
+              <p><strong>Gouvernorat :</strong> {{ client.billing.bill_state || 'Non renseigné' }}</p>
+              <p><strong>Code postal :</strong> {{ client.billing.zip_code || 'Non renseigné' }}</p>
+              <p><strong>Pays :</strong> {{ client.billing.country_title || 'Non renseigné' }}</p>
             </ion-card-content>
           </ion-card>
 
           <!-- Adresse de livraison -->
-          <ion-card class="info-card">
+          <ion-card 
+            class="info-card" 
+            v-if="client.delivery && (client.delivery.address || client.delivery.bill_state || client.delivery.zip_code)"
+          >
             <ion-card-header>
               <ion-card-title class="card-title">
                 <ion-icon :icon="navigateOutline" class="card-icon"></ion-icon>
@@ -110,15 +99,15 @@
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
-              <p><strong>Adresse :</strong> {{ client.deliveryAddress.address }}</p>
-              <p><strong>Gouvernorat :</strong> {{ client.deliveryAddress.governorate }}</p>
-              <p><strong>Code postal :</strong> {{ client.deliveryAddress.postalCode }}</p>
-              <p><strong>Pays :</strong> {{ client.deliveryAddress.country }}</p>
+              <p><strong>Adresse :</strong> {{ client.delivery.address || 'Non renseigné' }}</p>
+              <p><strong>Gouvernorat :</strong> {{ client.delivery.bill_state || 'Non renseigné' }}</p>
+              <p><strong>Code postal :</strong> {{ client.delivery.zip_code || 'Non renseigné' }}</p>
+              <p><strong>Pays :</strong> {{ client.delivery.country_title || 'Non renseigné' }}</p>
             </ion-card-content>
           </ion-card>
 
           <!-- Remarques -->
-          <ion-card class="info-card">
+          <ion-card class="info-card" v-if="client.note">
             <ion-card-header>
               <ion-card-title class="card-title">
                 <ion-icon :icon="documentTextOutline" class="card-icon"></ion-icon>
@@ -126,20 +115,20 @@
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
-              <p>{{ client.remarks }}</p>
+              <p>{{ client.note }}</p>
             </ion-card-content>
           </ion-card>
         </div>
 
-        <!-- Bouton pour ouvrir le menu d'actions -->
-        <div class="actions">
+        <!-- Bouton actions -->
+        <div class="actions" v-if="client">
           <ion-button @click="openActionPopover($event)" class="action-button" expand="block">
-            <ion-icon :icon="ellipsisHorizontalOutline" class="button-icon"></ion-icon>
+            <ion-icon :icon="ellipsisHorizontalOutline" class="button-icon" slot="start"></ion-icon>
             Actions
           </ion-button>
         </div>
 
-        <!-- Popover avec les options -->
+        <!-- Popover actions -->
         <ion-popover
           :is-open="popoverOpen"
           :event="popoverEvent"
@@ -147,17 +136,33 @@
         >
           <ion-content>
             <ion-list>
-              <ion-item button @click="viewClientTransactions(client.id)">
-                <ion-icon :icon="listOutline" slot="start"></ion-icon>
-                <ion-label>Voir les transactions</ion-label>
+              <ion-item button @click="BonsLivraison">
+                <ion-icon :icon="createOutline" slot="start"></ion-icon>
+                <ion-label> Bons de livraison</ion-label>
+              </ion-item>
+              <ion-item button @click="BonsSortie">
+                <ion-icon :icon="createOutline" slot="start"></ion-icon>
+                <ion-label> Bons de Sortie</ion-label>
+              </ion-item>
+              <ion-item button @click="Devis">
+                <ion-icon :icon="createOutline" slot="start"></ion-icon>
+                <ion-label> Devis</ion-label>
+              </ion-item>
+              <ion-item button @click="Modifier">
+                <ion-icon :icon="createOutline" slot="start"></ion-icon>
+                <ion-label> Modifier</ion-label>
               </ion-item>
               <ion-item button @click="createInvoice">
                 <ion-icon :icon="documentTextOutline" slot="start"></ion-icon>
-                <ion-label>Créer une facture</ion-label>
+                <ion-label> factures</ion-label>
               </ion-item>
               <ion-item button @click="recordPayment">
                 <ion-icon :icon="cashOutline" slot="start"></ion-icon>
-                <ion-label>Enregistrer un paiement</ion-label>
+                <ion-label>paiements</ion-label>
+              </ion-item>
+              <ion-item button @click="chronologie">
+                <ion-icon :icon="cashOutline" slot="start"></ion-icon>
+                <ion-label>Chronologie</ion-label>
               </ion-item>
             </ion-list>
           </ion-content>
@@ -167,134 +172,130 @@
   </ion-page>
 </template>
 
-<script>
-import {
-  IonPage,
-  IonContent,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
-  IonButton,
-  IonIcon,
-  IonPopover,
-  IonList,
-  IonItem,
-  IonLabel
-} from "@ionic/vue";
-import {
-  personCircleOutline,
-  businessOutline,
-  locationOutline,
-  navigateOutline,
-  documentTextOutline,
-  cashOutline,
-  mailOutline,
-  walletOutline,
-  receiptOutline,
-  ellipsisHorizontalOutline,
-  listOutline
-} from "ionicons/icons";
-import { useRouter } from "vue-router";
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { 
+  IonPage, IonContent, IonCard, IonCardHeader, 
+  IonCardTitle, IonCardContent, IonList, IonItem, 
+  IonLabel, IonIcon, IonButton, IonPopover
+} from '@ionic/vue';
+import { 
+  personCircleOutline, businessOutline, locationOutline, 
+  navigateOutline, documentTextOutline, cashOutline, 
+  mailOutline, walletOutline, ellipsisHorizontalOutline, 
+  createOutline 
+} from 'ionicons/icons';
+import { useClientController } from '@/controllers/ClientController';
 
-export default {
-  components: {
-    IonPage,
-    IonContent,
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardContent,
-    IonButton,
-    IonIcon,
-    IonPopover,
-    IonList,
-    IonItem,
-    IonLabel
-  },
-  data() {
-    return {
-      client: {
-        id: 1,
-        title: "M.",
-        firstName: "John",
-        lastName: "Doe",
-        company: "Iberis Solutions",
-        email: "john.doe@example.com",
-        phone: "123456789",
-        website: "www.iberis.com",
-        professionalInfo: {
-          type: "Entreprise",
-          priceGrid: "Standard",
-          taxIdentificationNumber: "123456789",
-          activity: "Informatique",
-          agencyOrCommercialCompany: "Iberis SARL",
-          currency: "Dinar(s) tunisien",
-          paymentTerms: "Payable à réception",
-        },
-        remarks: "Client fidèle depuis 5 ans.",
-        billingAddress: {
-          address: "123 Rue de l'Innovation",
-          governorate: "Tunis",
-          postalCode: "1000",
-          country: "Tunisie",
-        },
-        deliveryAddress: {
-          address: "456 Avenue de la Technologie",
-          governorate: "Ariana",
-          postalCode: "2000",
-          country: "Tunisie",
-        },
-      },
-      popoverOpen: false,
-      popoverEvent: null,
-    };
-  },
-  setup() {
-    const router = useRouter();
+const route = useRoute();
+const router = useRouter();
+const clientId = ref<string>(route.params.id as string);
+const popoverOpen = ref(false);
+const popoverEvent = ref<any>(null);
 
-    const viewClientTransactions = (clientId) => {
-      router.push(`/client/${clientId}/transactions`);
-    };
+const { 
+  clients, 
+  activities, 
+  currencies, 
+  paymentTerms,
+  currentClient: controllerCurrentClient,
+  loadClientDetails,
+  loadActivities,
+  loadCurrencies,
+  loadPaymentTerms
+} = useClientController();
 
-    return {
-      personCircleOutline,
-      businessOutline,
-      locationOutline,
-      navigateOutline,
-      documentTextOutline,
-      cashOutline,
-      mailOutline,
-      walletOutline,
-      receiptOutline,
-      ellipsisHorizontalOutline,
-      listOutline,
-      viewClientTransactions,
-    };
-  },
-  methods: {
-    openActionPopover(event) {
-      this.popoverEvent = event;
-      this.popoverOpen = true;
-    },
-    createInvoice() {
-      this.popoverOpen = false;
-      // Ajoutez ici la navigation vers la création de facture
-      console.log("Créer une facture pour le client", this.client.id);
-      // this.$router.push(`/client/${this.client.id}/create-invoice`);
-    },
-    recordPayment() {
-      this.popoverOpen = false;
-      // Ajoutez ici la navigation vers l'enregistrement de paiement
-      console.log("Enregistrer un paiement pour le client", this.client.id);
-      // this.$router.push(`/client/${this.client.id}/record-payment`);
-    },
-  },
+const client = computed(() => controllerCurrentClient.value);
+
+const loadData = async () => {
+  try {
+    await loadClientDetails(clientId.value);
+    if (activities.value.length === 0) await loadActivities();
+    if (currencies.value.length === 0) await loadCurrencies();
+    if (paymentTerms.value.length === 0) await loadPaymentTerms();
+  } catch (err: any) {
+    console.error('Erreur:', err);
+  }
+};
+
+onMounted(() => {
+  loadData();
+});
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return 'Non renseigné';
+  return new Date(dateString).toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'TND',
+  }).format(value);
+};
+
+const getActivityName = (id: string) => {
+  if (!id) return 'Non renseigné';
+  const activity = activities.value.find(a => a.hashed_id === id);
+  return activity ? activity.title : 'Non renseigné';
+};
+
+const getCurrencyName = (id: string) => {
+  if (!id) return 'Non renseigné';
+  const currency = currencies.value.find(c => c.hashed_id === id);
+  return currency ? `${currency.title} (${currency.symbol})` : 'Non renseigné';
+};
+
+const getPaymentTermName = (id: string) => {
+  if (!id) return 'Non renseigné';
+  const term = paymentTerms.value.find(p => p.hashed_id === id);
+  return term ? `${term.title} (${term.days >= 0 ? term.days + ' jours' : 'Fin de mois'})` : 'Non renseigné';
+};
+
+const BonsLivraison = () => {
+  popoverOpen.value = false;
+  router.push(`/clients/${clientId.value}/bonslivraison`);
+};
+
+const BonsSortie = () => {
+  popoverOpen.value = false;
+  router.push(`/clients/${clientId.value}/bonsortie`);
+};
+
+const Devis = () => {
+  popoverOpen.value = false;
+  router.push(`/clients/${clientId.value}/devis`);
+};
+
+const chronologie = () => {
+  popoverOpen.value = false;
+  router.push(`/clients/${clientId.value}/timeline`);
+};
+
+const openActionPopover = (event: any) => {
+  popoverEvent.value = event;
+  popoverOpen.value = true;
+};
+
+const createInvoice = () => {
+  popoverOpen.value = false;
+  router.push(`/clients/${clientId.value}/create-invoice`);
+};
+
+const recordPayment = () => {
+  popoverOpen.value = false;
+  router.push(`/clients/${clientId.value}/record-payment`);
 };
 </script>
 
+
+
 <style scoped>
-/* Styles globaux */
 ion-content {
   --background: linear-gradient(135deg, #f8f9fa, #e9ecef);
 }

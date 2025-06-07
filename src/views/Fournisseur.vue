@@ -1,162 +1,155 @@
 <template>
-    <ion-page>
-      <ion-content>
-        <div class="container">
-          <div class="logo-container">
-            <img src="../assets/logo-iberis.png" alt="Logo Iberis" class="logo" />
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-back-button default-href="/dashboard"></ion-back-button>
+        </ion-buttons>
+        <ion-title>Fournisseurs</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    
+    <ion-content>
+      <div class="container">
+        <div class="logo-container">
+          <img src="../assets/logo-iberis.png" alt="Logo Iberis" class="logo" />
+        </div>
+
+        <div class="content-wrapper">
+          <ion-searchbar
+            v-model="searchQuery"
+            placeholder="Rechercher un fournisseur"
+            class="search-bar"
+            @ionInput="currentPage = 1"
+            clear-icon="close-circle"
+          ></ion-searchbar>
+
+          <div v-if="isLoading" class="ion-text-center ion-padding">
+            <ion-spinner></ion-spinner>
+            <p>Chargement des fournisseurs...</p>
           </div>
-  
-          <div class="content-wrapper">
-            <ion-searchbar
-              v-model="searchQuery"
-              placeholder="Rechercher un fournisseur"
-              class="search-bar"
-            ></ion-searchbar>
-  
+
+          <div v-else>
             <ion-list class="list">
-              <ion-item v-for="supplier in paginatedSuppliers" :key="supplier.id" class="item">
+              <ion-item
+                v-for="provider in paginatedProviders"
+                :key="provider.personal_id"
+                class="item"
+                @click="viewFournisseurDetails(provider.hashed_id)"
+              >
                 <ion-label class="supplier-info">
-                  <h2>{{ supplier.displayName }}</h2>
-                  <p>{{ supplier.email }}</p>
-                  <p>{{ supplier.phone }}</p>
+                  <h2>{{ provider.display_name }}</h2>
+                  <p v-if="provider.email">{{ provider.email }}</p>
+                  <p v-if="provider.phone">{{ provider.phone }}</p>
+                  <p v-if="provider.reference">Réf: {{ provider.reference }}</p>
                 </ion-label>
-  
+
                 <div class="actions">
                   <img
                     src="../assets/icons8-modify-64.png"
                     alt="modify"
                     class="action-icon"
-                    @click="editSupplier(supplier.id)"
+                    @click.stop="editProvider(provider.hashed_id)"
                   />
                   <img
                     src="../assets/delete.png"
                     alt="delete"
                     class="action-icon danger"
-                    @click="deleteSupplier(supplier.id)"
+                    @click.stop="deleteProvider(provider.hashed_id)"
+                    :disabled="isLoading"
                   />
                 </div>
               </ion-item>
             </ion-list>
-  
-            <ion-footer>
+
+            <ion-footer v-if="filteredProviders.length > 0">
               <ion-toolbar>
                 <ion-buttons slot="start">
-                  <ion-button @click="prevPage" :disabled="currentPage === 1" class="pagination-button">
+                  <ion-button 
+                    @click="currentPage--" 
+                    :disabled="currentPage === 1" 
+                    class="pagination-button"
+                  >
                     Précédent
                   </ion-button>
                 </ion-buttons>
                 <ion-title>Page {{ currentPage }} / {{ totalPages }}</ion-title>
                 <ion-buttons slot="end">
-                  <ion-button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-button">
+                  <ion-button 
+                    @click="currentPage++" 
+                    :disabled="currentPage === totalPages" 
+                    class="pagination-button"
+                  >
                     Suivant
                   </ion-button>
                 </ion-buttons>
               </ion-toolbar>
             </ion-footer>
-  
+
             <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-              <ion-fab-button @click="openAddSupplierModal" class="fab-button">
+              <ion-fab-button @click="$router.push('/add-fournisseur')" class="fab-button">
                 <ion-label class="fab-label">+</ion-label>
               </ion-fab-button>
             </ion-fab>
           </div>
         </div>
-      </ion-content>
-    </ion-page>
-  </template>
+      </div>
+    </ion-content>
+  </ion-page>
+</template>
+
+<script setup lang="ts">
+import { 
+  IonPage, IonContent, IonSearchbar, IonList, IonItem, 
+  IonLabel, IonButton, IonFooter, IonToolbar, IonButtons, 
+  IonTitle, IonFab, IonFabButton, IonSpinner, IonHeader,
+  IonBackButton
+} from '@ionic/vue';
+import { useProviderController } from '@/controllers/ProviderController';
+import { watch } from 'vue';
+import { useRouter } from 'vue-router';
+
+const { 
+  providers,
+  filteredProviders,
+  paginatedProviders,
+  isLoading,
+  error,
+  searchQuery,
+  currentPage,
+  totalPages,
+  loadProviders,
+  editProvider,
+  deleteProvider
+} = useProviderController();
+const router = useRouter();
+
+const viewFournisseurDetails = (id: string) => router.push(`/fournisseur/${id}`);
+
+// Watcher pour debug
+watch(providers, (newVal) => {
+  console.log('Providers changed:', newVal);
+}, { deep: true });
+
+// Watcher pour le loading state
+watch(isLoading, (newVal) => {
+  console.log('Loading state changed:', newVal);
+});
+</script>
   
-  <script>
-  import {
-    IonPage,
-    IonContent,
-    IonSearchbar,
-    IonList,
-    IonItem,
-    IonLabel,
-    IonButton,
-    IonFooter,
-    IonToolbar,
-    IonButtons,
-    IonTitle,
-    IonFab,
-    IonFabButton,
-  } from "@ionic/vue";
-  
-  export default {
-    components: {
-      IonPage,
-      IonContent,
-      IonSearchbar,
-      IonList,
-      IonItem,
-      IonLabel,
-      IonButton,
-      IonFooter,
-      IonToolbar,
-      IonButtons,
-      IonTitle,
-      IonFab,
-      IonFabButton,
-    },
-    data() {
-      return {
-        suppliers: [
-          { id: 1, displayName: "Fournisseur 1", email: "fournisseur1@example.com", phone: "123456789" },
-          { id: 2, displayName: "Fournisseur 2", email: "fournisseur2@example.com", phone: "987654321" },
-        ],
-        searchQuery: "",
-        currentPage: 1,
-        itemsPerPage: 5,
-      };
-    },
-    computed: {
-      filteredSuppliers() {
-        return this.suppliers.filter(
-          (supplier) =>
-            supplier.displayName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-            supplier.email.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-            supplier.phone.toLowerCase().includes(this.searchQuery.toLowerCase())
-        );
-      },
-      paginatedSuppliers() {
-        const start = (this.currentPage - 1) * this.itemsPerPage;
-        const end = start + this.itemsPerPage;
-        return this.filteredSuppliers.slice(start, end);
-      },
-      totalPages() {
-        return Math.ceil(this.filteredSuppliers.length / this.itemsPerPage);
-      },
-    },
-    methods: {
-      openAddSupplierModal() {
-        this.$router.push("/add-fournisseur");
-      },
-      editSupplier(supplierId) {
-        this.$router.push(`/edit-fournisseur/${supplierId}`);
-      },
-      deleteSupplier(supplierId) {
-        this.suppliers = this.suppliers.filter((supplier) => supplier.id !== supplierId);
-        this.currentPage = Math.min(this.currentPage, this.totalPages) || 1;
-      },
-      nextPage() {
-        if (this.currentPage < this.totalPages) this.currentPage++;
-      },
-      prevPage() {
-        if (this.currentPage > 1) this.currentPage--;
-      },
-    },
-  };
-  </script>
-  
-  <style scoped>
+<style scoped>
 ion-content {
-  --background: #f8f9fa; /* Fond légèrement gris */
+  --background: #f8f9fa;
+}
+
+ion-header ion-toolbar {
+  --background: #47463d;
+  --color: #ffffff;
 }
 
 .container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
   padding: 24px;
 }
@@ -174,17 +167,54 @@ ion-content {
 .content-wrapper {
   max-width: 800px;
   width: 100%;
-  text-align: center;
 }
 
 .search-bar {
   margin-bottom: 20px;
-  --background: #ffffff; /* Fond blanc */
+  --background: #ffffff;
   font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   color: #282721;
   --border-radius: 12px;
-  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Ombre légère */
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
+.list {
+  background: transparent;
+  margin-bottom: 1.8rem;
+}
+
+.item {
+  --background: #ffffff;
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.supplier-info {
+  flex: 1;
+}
+
+.supplier-info h2 {
+  color: #47463d;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.supplier-info p {
+  color: #636e72;
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
 .actions {
   display: flex;
   gap: 10px;
@@ -197,111 +227,62 @@ ion-content {
   cursor: pointer;
 }
 
-
-
-ion-toolbar {
-  --background: #c2c2ad; /* Fond blanc */
-  --color: #000000; /* Texte noir */
-  --border-color: #e0e0e0; /* Bordure légère */
-  --border-width: 1px; /* Épaisseur de la bordure */
-  --border-style: solid; /* Style de la bordure */
-  --padding-top: 8px; /* Espacement en haut */
-  --padding-bottom: 8px; /* Espacement en bas */
-  --padding-start: 16px; /* Espacement à gauche */
-  --padding-end: 16px; /* Espacement à droite */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Ombre légère */
+.edit-button {
+  --color: #47463d;
 }
 
-/* Style pour les boutons de pagination dans le toolbar */
-ion-toolbar ion-button {
-  --color: #000000; /* Texte noir */
-  --border-radius: 20px; /* Coins arrondis */
-  --padding-start: 12px; /* Espacement à gauche */
-  --padding-end: 12px; /* Espacement à droite */
-  font-weight: 550; /* Poids de la police */
-  transition: background-color 0.2s ease; /* Transition fluide */
+.delete-button {
+  --color: #e74c3c;
 }
 
-/* Effet de survol pour les boutons de pagination */
-ion-toolbar ion-button:hover {
-  --background: #e0c764; /* Jaune plus foncé au survol */
-}
-
-/* Style pour le titre dans le toolbar */
-ion-toolbar ion-title {
-  font-size: 1.1rem; /* Taille de la police */
-  font-weight: 600; /* Poids de la police */
-  font-family:sans-serif;
-  color: #000000; /* Texte noir */
-}
-
-.list {
-  background: transparent;
-  margin-bottom: 1.8rem;
-}
-
-.item {
-  --background: #ffffff; /* Fond blanc */
-  --border-radius: 12px;
+ion-footer ion-toolbar {
+  --background: #c2c2ad;
+  --color: #000000;
+  --border-color: #e0e0e0;
+  --border-width: 1px;
+  --border-style: solid;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
   --padding-start: 16px;
-  --inner-padding-end: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Ombre légère */
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  --padding-end: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.item:hover {
-  transform: translateY(-2px); /* Effet de levée au survol */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Ombre plus prononcée */
-}
-
-.client-info {
-  flex: 1;
-}
-
-.client-info h2 {
-  color: #47463d; /* Couleur sombre */
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.client-info p {
-  color: #636e72; /* Couleur grise */
-  font-size: 0.9rem;
-  margin: 4px 0;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-button {
-  --background: #d9c94f; 
-  --color: #47463d; 
+ion-toolbar ion-button {
+  --color: #000000;
+  --border-radius: 20px;
+  --padding-start: 12px;
+  --padding-end: 12px;
   font-weight: 550;
-  border-radius: 20px;
   transition: background-color 0.2s ease;
 }
 
-.action-button:hover {
-  --background: #cab40f; 
+ion-toolbar ion-button:hover {
+  --background: #e0c764;
+}
+
+ion-toolbar ion-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: sans-serif;
+  color: #000000;
 }
 
 .pagination-button {
-  --background: #47463d; /* Couleur sombre */
-  --color: #ffffff; /* Texte blanc */
+  --background: #47463d;
+  --color: #ffffff;
   font-weight: 550;
   border-radius: 20px;
 }
+
 .fab-button {
-  --background: #ecd737; /* Couleur jaune */
-  --color: #1e1e1d; /* Texte sombre */
+  --background: #ecd737;
+  --color: #1e1e1d;
   text-align: center;
 }
 
 .fab-button:hover {
-  --background: #c3b12b; /* Jaune plus foncé au survol */
+  --background: #c3b12b;
 }
 
 .fab-label {
@@ -313,6 +294,37 @@ ion-toolbar ion-title {
   padding: 4px;
 }
 
+.error-container {
+  background-color: rgba(231, 76, 60, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+}
 
+.error-icon {
+  font-size: 48px;
+  color: #e74c3c;
+  margin-bottom: 12px;
+}
 
+.empty-state {
+  padding: 40px 20px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: #c2c2ad;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  font-size: 1.4rem;
+  color: #47463d;
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  color: #636e72;
+  margin-bottom: 20px;
+}
 </style>

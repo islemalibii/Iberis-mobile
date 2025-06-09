@@ -135,8 +135,8 @@
   
 <script setup lang="ts">
 import { useSendController } from '@/controllers/SendInvoiceController'; // adjust path if needed
-import { QuillEditor } from '@vueup/vue-quill';
-import '@vueup/vue-quill/dist/vue-quill.snow.css';
+//import { QuillEditor } from '@vueup/vue-quill';
+//import '@vueup/vue-quill/dist/vue-quill.snow.css';
 
 const {
   toEmails,

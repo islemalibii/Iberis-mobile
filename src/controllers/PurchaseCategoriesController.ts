@@ -20,8 +20,8 @@ export default function usePurchaseCategories() {
           borderWidth: 0
         }],
         percentages: [100],
-        total: '0.000 TND',
-        currency: 'TND'
+        total: '0.000 ',
+        currency: ''
       };
     }
 
@@ -60,8 +60,28 @@ export default function usePurchaseCategories() {
       loading.value = true;
       error.value = null;
       
-      console.log('Récupération des données d\'achats pour la période:', fromDate, 'à', toDate);
+      // Log pour indiquer quelle période est utilisée
+      if (fromDate && toDate) {
+        console.log('Récupération des données d\'achats pour la période spécifiée:', fromDate, 'à', toDate);
+      } else {
+        console.log('Récupération des données d\'achats avec les dates par défaut (période comptable de l\'entreprise)');
+      }
       
+      // Validation des dates avant l'appel API (seulement si des dates sont fournies)
+      if (fromDate && toDate) {
+        // Vérifier le format des dates
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(fromDate) || !dateRegex.test(toDate)) {
+          throw new Error('Format de date invalide. Utilisez YYYY-MM-DD');
+        }
+        
+        // Vérifier que la date de début est antérieure à la date de fin
+        if (new Date(fromDate) > new Date(toDate)) {
+          throw new Error('La date de début doit être antérieure à la date de fin');
+        }
+      }
+      
+      // Appel du service - il gérera automatiquement les dates par défaut si aucune n'est fournie
       const data = await getPurchaseCategories(fromDate, toDate);
       chartData.value = processChartData(data);
       
@@ -87,5 +107,17 @@ export default function usePurchaseCategories() {
     }
   };
 
-  return { chartData, loading, error, fetchData };
+  // Nouvelle fonction pour charger les données avec les dates par défaut (période comptable)
+  const fetchDefaultData = async () => {
+    console.log('Chargement des données avec la période comptable par défaut');
+    await fetchData(); // Pas de dates = utilisation de la période comptable
+  };
+
+  return { 
+    chartData, 
+    loading, 
+    error, 
+    fetchData,
+    fetchDefaultData 
+  };
 }

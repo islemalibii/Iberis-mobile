@@ -1,55 +1,84 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true"></ion-header>
+    <ion-header :translucent="true">
+ 
+    </ion-header>
 
     <ion-content :fullscreen="true">
       <div class="container">
-        <div class="top-section">
-          <div class="logo-and-name">
-            <img src="../assets/logo-iberis.png" alt="Logo" class="logo" />
-            <h1 class="user-name">{{ user.fullname || "Invité" }}</h1>
-          </div>
+    
 
-          <div class="user-info">
-            <div class="info-grid">
-              <div class="info-row">
-                <p class="status">
-                  <img src="../assets/profile.png" class="icon" />
-                  {{ user.status || "Non défini" }}
-                </p>
-                <p class="phone">
-                  <img src="../assets/iphone.png" class="icon" />
-                  {{ user.phone }}
-                </p>
+   
+        <div class="profile-header">
+           <!--<div class="logo-section">
+            <img src="../assets/logo-iberis.png" alt="Logo" class="company-logo" />
+          </div>-->
+          
+          <div class="user-card">
+            <h1 class="user-name">{{ user.fullname || "Guest" }}</h1>
+            
+            <div class="user-stats">
+              <div class="stat-item">
+                <img src="../assets/profile.png" class="stat-icon" />
+                <span>{{ user.status || "Not defined" }}</span>
               </div>
-        
-              <div class="info-row">
-                <p class="email">
-                  <img src="../assets/email.png" class="icon" />
-                  {{ user.email || "Non défini" }}
-                </p>
+              <div class="stat-item">
+                <img src="../assets/iphone.png" class="stat-icon" />
+                <span>{{ user.phone }}</span>
               </div>
+              <div class="stat-item">
+                <img src="../assets/email.png" class="stat-icon" />
+                <span>{{ user.email || "Not defined" }}</span>
+              </div>
+            </div>
 
-              <div class="info-row">
-                <p class="companies">
-                  <ion-icon :icon="businessOutline" class="icon"></ion-icon>
-                  Entreprises possédées: {{ user.companiesOwned?.length || 0 }}
-                </p>
-                <p class="companies">
-                  <ion-icon :icon="peopleOutline" class="icon"></ion-icon>
-                  Entreprises rejointes: {{ user.companiesJoined?.length || 0 }}
-                </p>
+            <div class="company-stats">
+              <div class="company-stat">
+                <ion-icon :icon="businessOutline" class="company-icon"></ion-icon>
+                <span>{{ user.companiesOwned?.length || 0 }} Owned</span>
+              </div>
+              <div class="company-stat">
+                <ion-icon :icon="peopleOutline" class="company-icon"></ion-icon>
+                <span>{{ user.companiesJoined?.length || 0 }} Joined</span>
               </div>
             </div>
           </div>
         </div>
-        <ion-item class="item" button @click="goToNotifications">
-          <ion-icon :icon="notificationsOutline" slot="start"></ion-icon>
-          <ion-label>Notifications</ion-label>
-        </ion-item>
-        <div class="form-section">
-          <div v-if="page === 1">
+
+        <!-- Notifications Button -->
+        <div class="notification-section">
+          <ion-button class="notification-button" fill="outline" @click="goToNotifications">
+            <ion-icon :icon="notificationsOutline" slot="start"></ion-icon>
+            Notifications
+          </ion-button>
+        </div>
+
+        <!-- Form Container -->
+        <div class="form-container">
+          <!-- Page 1: Profile Info -->
+               <!-- Progress Bar -->
+        <div class="progress-bar">
+          <div class="progress-step" :class="{ active: page >= 1 }">1</div>
+          <div class="progress-line" :class="{ active: page >= 2 }"></div>
+          <div class="progress-step" :class="{ active: page >= 2 }">2</div>
+          <div class="progress-line" :class="{ active: page >= 3 }"></div>
+          <div class="progress-step" :class="{ active: page >= 3 }">3</div>
+        </div>
+          <div v-if="page === 1" class="fade-enter-active">
+            <h2 class="section-title">Personal Information</h2>
+            
             <div class="avatar-section">
+              <div class="avatar-container">
+                <ion-avatar class="profile-avatar">
+                  <img :src="user.image" alt="Avatar" />
+                </ion-avatar>
+                <div class="avatar-overlay" @click="triggerFileInput">
+                  <ion-icon :icon="addOutline" class="avatar-edit-icon"></ion-icon>
+                </div>
+              </div>
+              <ion-button class="avatar-button" fill="outline" @click="triggerFileInput">
+                Change Photo
+              </ion-button>
               <input
                 type="file"
                 accept="image/*"
@@ -57,139 +86,183 @@
                 style="display: none"
                 ref="fileInput"
               />
-              <ion-avatar @click="triggerFileInput">
-                <img :src="user.image" alt="Avatar" />
-              </ion-avatar>
-              <ion-button fill="outline" @click="triggerFileInput">Changer la photo</ion-button>
             </div>
 
-            <ion-list class="list">
-              <ion-item class="item">
+            <div class="input-group">
+              <ion-label class="label">Full Name</ion-label>
+              <ion-item class="custom-input">
                 <ion-input
                   v-model="user.fullname"
                   :value="user.fullname"
                   @ionInput="user.fullname = $event.detail.value"
-                  placeholder="Nom Complet"
+                  placeholder="Your full name"
                 ></ion-input>
               </ion-item>
-              <ion-item class="item">
+            </div>
+
+            <div class="input-group">
+              <ion-label class="label">Email</ion-label>
+              <ion-item class="custom-input readonly">
                 <ion-input
                   v-model="user.email"
-                  placeholder="Email"
+                  placeholder="Your email"
                   readonly
                 ></ion-input>
               </ion-item>
-            </ion-list>
+            </div>
 
-            <ion-button expand="block" class="next-button" @click="nextPage">Suivant</ion-button>
+            <div class="button-container">
+              <ion-button expand="block" class="next-button" @click="nextPage">
+                Next
+                <ion-icon :icon="arrowForward" slot="end"></ion-icon>
+              </ion-button>
+            </div>
           </div>
 
-          <div v-if="page === 2">
-            <ion-list class="list">
-              <ion-item class="item">
+          <!-- Page 2: Personal Details -->
+          <div v-if="page === 2" class="fade-enter-active">
+            <h2 class="section-title">Personal Details</h2>
+
+            <div class="input-group">
+              <ion-label class="label">Phone</ion-label>
+              <ion-item class="custom-input readonly">
                 <ion-input
                   v-model="user.phone"
-                  placeholder="Téléphone"
+                  placeholder="Your phone number"
                   readonly
                 ></ion-input>
               </ion-item>
-              <ion-item class="item">
+            </div>
+
+            <div class="input-group">
+              <ion-label class="label">Birth Date</ion-label>
+              <ion-item class="custom-input">
                 <ion-input
                   type="date"
                   v-model="user.birthday"
                   @ionInput="user.birthday = $event.detail.value"
-                  placeholder="Anniversaire"
+                  placeholder="Your birthday"
                 ></ion-input>
               </ion-item>
-              <ion-item class="item">
+            </div>
+
+            <div class="input-group">
+              <ion-label class="label">Gender</ion-label>
+              <ion-item class="custom-input">
                 <ion-select
                   v-model="user.gender"
                   @ionChange="user.gender = $event.detail.value"
-                  placeholder="Sélectionnez votre sexe"
+                  placeholder="Select your gender"
                 >
-                  <ion-select-option value="male">Homme</ion-select-option>
-                  <ion-select-option value="female">Femme</ion-select-option>
-                  <ion-select-option value="other">Autre</ion-select-option>
+                  <ion-select-option value="male">Male</ion-select-option>
+                  <ion-select-option value="female">Female</ion-select-option>
+                  <ion-select-option value="other">Other</ion-select-option>
                 </ion-select>
               </ion-item>
-            </ion-list>
+            </div>
 
-            <div class="buttonContainer">
-              <ion-button expand="block" class="back-button" @click="previousPage">Retour</ion-button>
-              <ion-button expand="block" class="next-button" @click="nextPage">Suivant</ion-button>
+            <div class="button-container">
+              <ion-button fill="outline" class="back-button" @click="previousPage">
+                <ion-icon :icon="arrowBack" slot="start"></ion-icon>
+                Back
+              </ion-button>
+              <ion-button class="next-button" @click="nextPage">
+                Next
+                <ion-icon :icon="arrowForward" slot="end"></ion-icon>
+              </ion-button>
             </div>
           </div>
 
-          <div v-if="page === 3">
-            <ion-list class="list">
-              <ion-item class="item">
-                <ion-input
-                  type="password"
-                  v-model="passwords.old"
-                  placeholder="Ancien mot de passe"
-                ></ion-input>
-              </ion-item>
-              <ion-item class="item">
-                <ion-input
-                  type="password"
-                  v-model="passwords.new"
-                  placeholder="Nouveau mot de passe"
-                ></ion-input>
-              </ion-item>
-              <ion-item class="item">
-                <ion-input
-                  type="password"
-                  v-model="passwords.confirm"
-                  placeholder="Confirmer le mot de passe"
-                ></ion-input>
-              </ion-item>
-            </ion-list>
+          <!-- Page 3: Security Settings -->
+          <div v-if="page === 3" class="fade-enter-active">
+            <h2 class="section-title">Security Settings</h2>
 
-           
+            <div class="password-section">
+              <div class="input-group">
+                <ion-label class="label">Old Password</ion-label>
+                <ion-item class="custom-input">
+                  <ion-input
+                    type="password"
+                    v-model="passwords.old"
+                    placeholder="Old password"
+                  ></ion-input>
+                </ion-item>
+              </div>
 
-            <ion-item class="item">
-  <ion-label>Expiration de session</ion-label>
-  <ion-toggle
-    v-model="sessionExpirationEnabled"
-    @ionChange="handleToggleChange($event.detail.checked)"
-  ></ion-toggle>
-</ion-item>
+              <div class="input-group">
+                <ion-label class="label">New Password</ion-label>
+                <ion-item class="custom-input">
+                  <ion-input
+                    type="password"
+                    v-model="passwords.new"
+                    placeholder="New password"
+                  ></ion-input>
+                </ion-item>
+              </div>
 
-<template v-if="sessionExpirationEnabled">
-  <ion-item class="item">
-    <ion-label position="stacked">Durée (minutes)</ion-label>
-    <ion-input
-      type="number"
-      min="1"
-      v-model.number="sessionExpirationMinutes"
-      placeholder="Durée en minutes"
-    ></ion-input>
-  </ion-item>
-  
-  <ion-button
-    expand="block"
-    @click="updateSessionExpirationSettings"
-    :disabled="!sessionExpirationMinutes || sessionExpirationMinutes < 1"
-  >
-    <ion-spinner v-if="loading" name="crescent"></ion-spinner>
-    <span v-else>Enregistrer la durée</span>
-  </ion-button>
-  
-  <ion-note v-if="user.sessionExpiration">
-    Durée actuelle: {{ user.sessionExpiration }} minutes
-  </ion-note>
-</template>
-
-            <div class="buttonContainer">
-              <ion-button expand="block" class="back-button" @click="previousPage">Retour</ion-button>
-              <ion-button expand="block" class="next-button" @click="saveProfile">Enregistrer</ion-button>
+              <div class="input-group">
+                <ion-label class="label">Confirm Password</ion-label>
+                <ion-item class="custom-input">
+                  <ion-input
+                    type="password"
+                    v-model="passwords.confirm"
+                    placeholder="Confirm password"
+                  ></ion-input>
+                </ion-item>
+              </div>
             </div>
-            <ion-item class="item">
-              <ion-label color="danger">Supprimer mon compte</ion-label>
-              <ion-button @click="confirmDeletion" fill="outline" color="danger">
-                Supprimer
+
+            <!-- Session Expiration Settings -->
+            <div class="session-section">
+              <div class="toggle-container">
+                <ion-item class="toggle-item">
+                  <ion-label>Session Expiration</ion-label>
+                  <ion-toggle
+                    v-model="sessionExpirationEnabled"
+                    @ionChange="handleToggleChange($event.detail.checked)"
+                  ></ion-toggle>
+                </ion-item>
+              </div>
+
+              <div v-if="sessionExpirationEnabled" class="expiration-controls">
+                <div class="input-group">
+                  <ion-label class="label">Duration (minutes)</ion-label>
+                  <ion-item class="custom-input">
+                    <ion-input
+                      type="number"
+                      min="1"
+                      v-model.number="sessionExpirationMinutes"
+                      placeholder="Duration in minutes"
+                    ></ion-input>
+                  </ion-item>
+                </div>
+                
+                <ion-button
+                  expand="block"
+                  class="session-button"
+                  @click="updateSessionExpirationSettings"
+                  :disabled="!sessionExpirationMinutes || sessionExpirationMinutes < 1"
+                >
+                  <ion-spinner v-if="loading" name="crescent"></ion-spinner>
+                  <span v-else>Save Duration</span>
+                </ion-button>
+                
+                <ion-note v-if="user.sessionExpiration" class="session-note">
+                  Current duration: {{ user.sessionExpiration }} minutes
+                </ion-note>
+              </div>
+            </div>
+
+            <div class="button-container">
+              <ion-button fill="outline" class="back-button" @click="previousPage">
+                <ion-icon :icon="arrowBack" slot="start"></ion-icon>
+                Back
               </ion-button>
-            </ion-item>
+              <ion-button class="submit-button" @click="saveProfile">
+                <ion-icon :icon="checkmark" slot="start"></ion-icon>
+                Save
+              </ion-button>
+            </div>
           </div>
         </div>
       </div>
@@ -211,19 +284,23 @@ import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonContent, IonAvatar, IonButton,
   IonInput, IonItem, IonList, IonSelect, IonSelectOption,
-  IonLabel, IonToggle, IonIcon, IonToast,
-  toastController
+  IonLabel, IonToggle, IonIcon, IonToast, IonToolbar, IonTitle,
+  IonSpinner, IonNote, toastController
 } from '@ionic/vue';
-import { notificationsOutline } from 'ionicons/icons';
-
-import { businessOutline, peopleOutline } from 'ionicons/icons';
+import { 
+  notificationsOutline, businessOutline, peopleOutline,
+  addOutline, arrowForward, arrowBack, checkmark,
+  warningOutline, trashOutline
+} from 'ionicons/icons';
 import { useUserController } from '@/controllers/UserController';
+
 export default defineComponent({
   name: 'ProfilePage',
   components: {
     IonPage, IonHeader, IonContent, IonAvatar, IonButton,
     IonInput, IonItem, IonList, IonSelect, IonSelectOption,
-    IonLabel, IonToggle, IonIcon, IonToast
+    IonLabel, IonToggle, IonIcon, IonToast, IonToolbar, IonTitle,
+    IonSpinner, IonNote
   },
   setup() {
     const router = useRouter();
@@ -234,7 +311,8 @@ export default defineComponent({
     const page = ref(1);
     const sessionExpirationEnabled = ref(false);
     const sessionExpirationMinutes = ref<number | null>(0);
-      const unreadCount = ref(0);
+    const loading = ref(false);
+    
     const userController = useUserController();
     const {
       userProfile: user,
@@ -252,98 +330,62 @@ export default defineComponent({
       confirm: ''
     });
 
-    /*onMounted(async () => {
-      try {
-        await loadUserProfile();
-      } catch (err) {
-        error.value = "Session expirée - Veuillez vous reconnecter";
-        console.error(err);
-        router.push('/login');
+    onMounted(async () => {
+      await loadUserProfile();
+      sessionExpirationEnabled.value = !!user.value.sessionExpiration;
+      if (user.value.sessionExpiration) {
+        sessionExpirationMinutes.value = user.value.sessionExpiration;
       }
     });
-*/
-onMounted(async () => {
-  await loadUserProfile();
-  sessionExpirationEnabled.value = !!user.value.sessionExpiration;
-  if (user.value.sessionExpiration) {
-    sessionExpirationMinutes.value = user.value.sessionExpiration;
-  }
-});
+
     const changeImage = async (event: Event) => {
       const input = event.target as HTMLInputElement;
       if (input.files?.length) {
         try {
           await uploadImage(input.files[0]);
         } catch (err) {
-          error.value = "Erreur lors du changement de photo";
+          error.value = "Error changing photo";
           console.error(err);
         }
       }
-      
     };
     
     const goToNotifications = () => {
       router.push('/notifications');
     };
-    const toggleSessionExpiration = (enabled: boolean) => {
+
+    const updateSessionExpirationSettings = async () => {
+      if (!sessionExpirationMinutes.value || sessionExpirationMinutes.value < 1) {
+        showToast('Invalid duration (min. 1 minute)', 'danger');
+        return;
+      }
+
+      loading.value = true;
+      const { success, message } = await updateSessionExpiration(sessionExpirationMinutes.value);
+      loading.value = false;
+      showToast(message, success ? 'success' : 'danger');
+    };
+
+    const showToast = async (message: string, color: string) => {
+      const toast = await toastController.create({
+        message,
+        duration: 2000,
+        color
+      });
+      await toast.present();
+    };
+
+    const handleToggleChange = async (enabled: boolean) => {
       sessionExpirationEnabled.value = enabled;
       if (!enabled) {
-        disableSessionExpiration();
+        const { success, message } = await updateSessionExpiration(null);
+        showToast(message, success ? 'success' : 'danger');
       }
     };
 
-    const updateSessionExpirationSettings = async () => {
-  if (!sessionExpirationMinutes.value || sessionExpirationMinutes.value < 1) {
-    showToast('Durée invalide (min. 1 minute)', 'danger');
-    return;
-  }
-
-  const { success, message } = await updateSessionExpiration(sessionExpirationMinutes.value);
-  showToast(message, success ? 'success' : 'danger');
-};
-
-const showToast = async (message: string, color: string) => {
-  const toast = await toastController.create({
-    message,
-    duration: 2000,
-    color
-  });
-  await toast.present();
-};
-const handleToggleChange = async (enabled: boolean) => {
-  sessionExpirationEnabled.value = enabled;
-  if (!enabled) {
-    const { success, message } = await updateSessionExpiration(null);
-    showToast(message, success ? 'success' : 'danger');
-  }
-};
-const disableSessionExpiration = async () => {
-  const result = await updateSessionExpiration(null);
-  
-  const toast = await toastController.create({
-    message: result.message,
-    duration: 2000,
-    color: 'success'
-  });
-  await toast.present();
-  
-  // Recharger les données utilisateur
-  await loadUserProfile();
-};
-
     const confirmDeletion = () => {
-      deleteToastMessage.value = "Êtes-vous sûr de vouloir supprimer votre compte ?";
+      deleteToastMessage.value = "Are you sure you want to delete your account?";
       showDeleteToast.value = true;
-    };
-
-    const formatDate = (dateString?: string) => {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('fr-FR', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
     };
 
     const triggerFileInput = () => fileInput.value?.click();
@@ -367,7 +409,7 @@ const disableSessionExpiration = async () => {
       try {
         if (forceProfileUpdate || page.value !== 3) {
           if (!user.value.fullname?.trim()) {
-            throw new Error('Le nom complet est obligatoire');
+            throw new Error('Full name is required');
           }
 
           await updateProfile({
@@ -379,16 +421,16 @@ const disableSessionExpiration = async () => {
           });
         } else if (passwords.value.old && passwords.value.new && passwords.value.confirm) {
           if (passwords.value.new !== passwords.value.confirm) {
-            throw new Error('Les mots de passe ne correspondent pas');
+            throw new Error('Passwords do not match');
           }
           
           await updatePassword(passwords.value);
         } else {
-          throw new Error('Action non reconnue');
+          throw new Error('Unrecognized action');
         }
 
         const toast = await toastController.create({
-          message: 'Profil mis à jour avec succès',
+          message: 'Profile updated successfully',
           duration: 2000,
           color: 'success'
         });
@@ -397,7 +439,7 @@ const disableSessionExpiration = async () => {
         await loadUserProfile();
         
       } catch (err: any) {
-        console.error('[Vue] Erreur:', err.message);
+        console.error('[Vue] Error:', err.message);
         error.value = err.message;
       }
     };
@@ -410,150 +452,400 @@ const disableSessionExpiration = async () => {
       fileInput,
       showDeleteToast,
       deleteToastMessage,
+      sessionExpirationEnabled,
+      sessionExpirationMinutes,
+      loading,
       businessOutline,
       peopleOutline,
+      notificationsOutline,
+      addOutline,
+      arrowForward,
+      arrowBack,
+      checkmark,
+      warningOutline,
+      trashOutline,
       changeImage,
       triggerFileInput,
       nextPage,
       previousPage,
       saveProfile,
-      formatDate,
       confirmDeletion,
-      sessionExpirationEnabled,
-      sessionExpirationMinutes,
-      toggleSessionExpiration,
       updateSessionExpirationSettings,
-      notificationsOutline,
+      handleToggleChange,
       goToNotifications,
     };
   }
 });
 </script>
+
+
+
 <style scoped>
 ion-content {
-  --background: white;
+  --background: #f5f5f5;
+  
 }
 
 .container {
   display: flex;
   flex-direction: column;
+  align-items: center;
   padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+    color: #191602;
 }
 
+.page-title {
+  color: #191602;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  padding: 16px;
+}
 
-.top-section {
+/* Progress Bar */
+.progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
   width: 100%;
+  max-width: 400px;
 }
 
-.logo {
-  width: 180px;
-  text-align: left;
+.progress-step {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #dedace;
+  color: #191602;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.progress-step.active {
+  background: #dfc925;
+  color: white;
+}
+
+.progress-line {
+  flex: 1;
+  height: 3px;
+  background: #dedace;
+  margin: 0 10px;
+  transition: all 0.3s ease;
+}
+
+.progress-line.active {
+  background: #dfc925;
+}
+
+/* Profile Header */
+.profile-header {
+  
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 16px;
+}
+
+.logo-section {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.company-logo {
+  width: 120px;
+  height: auto;
+}
+
+.user-card {
+  text-align: center;
 }
 
 .user-name {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 600;
-  color: #333;
+  color: #dfc925;
+  margin-bottom: 20px;
 }
 
-.info-grid {
-  width: 100%;
-  display: grid;
-  gap: 1px;
-}
-/* Ajoutez dans votre section style */
-.expiration-controls {
-  margin-top: 15px;
-  background: rgba(var(--ion-color-light-rgb), 0.3);
-  border-radius: 12px;
-  padding: 10px;
-}
-
-ion-note {
-  display: block;
-  text-align: center;
-  margin-top: 10px;
-  font-size: 0.9rem;
-  color: var(--ion-color-medium);
-}
-
-.info-row { 
+.user-stats {
   display: flex;
-  justify-content: space-between;
-  font-size: 13px;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
   color: #555;
 }
 
-
-.icon {
-  margin-right: 8px;
+.stat-icon {
   width: 20px;
-  height: 22px;
+  height: 20px;
 }
 
+.company-stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 16px;
+}
+
+.company-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #47463d;
+  font-weight: 500;
+}
+
+.company-icon {
+  font-size: 20px;
+  color: #dfc925;
+}
+
+/* Notification Section */
+.notification-section {
+  margin-bottom: 24px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.notification-button {
+  width: 100%;
+  --border-color: #dfc925;
+  --color: #dfc925;
+  --border-radius: 12px;
+  height: 48px;
+}
+
+/* Form Container */
+.form-container {
+
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+}
+
+.section-title {
+  color: #191602;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+/* Avatar Section */
 .avatar-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 32px;
 }
+
+.avatar-container {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border: 3px solid #dfc925;
+}
+
+.avatar-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  background: #dfc925;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 3px solid white;
+}
+
+.avatar-edit-icon {
+  color: white;
+  font-size: 18px;
+}
+
+.avatar-button {
+  --border-color: #dfc925;
+  --color: #dfc925;
+  --border-radius: 24px;
+}
+
+/* Input Groups */
+.input-group {
+
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.label {
+  color: #47463d;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.custom-input {
+    color: #000;
+  --background: #f8f8f8;
+  --border-radius: 8px;
+  --border-width: 1px;
+  --border-color: #dedace;
+  margin-top: 4px;
+}
+
+.custom-input:hover {
+  --border-color: #dfc925;
+}
+
+.custom-input.readonly {
+  --background: #f0f0f0;
+  opacity: 0.7;
+}
+
+/* Password Section */
+.password-section {
+  margin-bottom: 32px;
+}
+
+/* Session Section */
+.session-section {
+  margin-bottom: 32px;
+  color: #000;
+}
+
+.toggle-container {
+  margin-bottom: 16px;
+}
+
+.toggle-item {
+  --background: #f8f8f8;
+  --border-radius: 8px;
+  --border-width: 1px;
+  --border-color: #dedace;
+}
+
 .expiration-controls {
-  margin: 15px 0;
-  background: #f5f5f5;
-  padding: 15px;
-  border-radius: 8px;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #dedace;
+    color: #000;
 }
 
-.expiration-controls ion-item {
-  --background: transparent;
-}
-.list {
-  background: transparent;
-  width: 100%;
-}
-
-.item {
-  --background: #a6a49c;
-  --border-radius: 10px;
-  --border-color: #47463d;
-  --padding-start:15px;
-  --inner-padding-end: 15px;
-  margin-bottom: 20px;
-  margin-top: 45px;
-  color: #333;
-}
-
-.next-button {
-  margin-top: 20px;
-  width: 100%;
-  font-weight: 600;
+.session-button {
   --background: #dfc925;
-  --color: #474646;
-}
-/* Dans le style du composant */
-.password-error {
-  color: var(--ion-color-danger);
-  font-size: 0.9rem;
-  margin-top: 5px;
+    color: #000;
+
+  --border-radius: 8px;
+  margin-top: 16px;
 }
 
-.password-success {
-  color: var(--ion-color-success);
-  font-size: 0.9rem;
-  margin-top: 5px;
-}
-.back-button {
-  margin-top: 20px;
-  width: 100%;
-  font-weight: 600;
-  --background: #6c757d;
-  --color: #474646;
+.session-note {
+    color: #000;
+
+  text-align: center;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #666;
 }
 
-.buttonContainer {
+/* Button Container */
+.button-container {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 20px;
+  margin-top: 32px;
+}
+
+.next-button,
+.back-button,
+.submit-button {
+  flex: 1;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  --border-radius: 24px;
+  text-transform: none;
+}
+
+.next-button,
+.submit-button {
+  --background: #dfc925;
+  --color: white;
+}
+
+.back-button {
+  --border-color: #dfc925;
+  --color: #dfc925;
+}
+
+/* Danger Zone */
+
+
+
+/* Animations */
+.fade-enter-active {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .form-container {
+    padding: 24px;
+  }
+  
+  .button-container {
+    flex-direction: column;
+  }
+  
+  .user-stats {
+    align-items: center;
+  }
+  
+  .company-stats {
+    flex-direction: column;
+    align-items: center;
+  }
 }
 </style>

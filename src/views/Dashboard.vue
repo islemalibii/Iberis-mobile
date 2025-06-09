@@ -59,7 +59,7 @@
           </div>
         </div>
 
-        <!-- Nouveau filtre de période -->
+        <!-- Nouveau filtre de période amélioré -->
         <div class="period-filter-container">
           <div class="filter-header">
             <h3 class="filter-title">
@@ -113,38 +113,42 @@
 
         <!-- KPI Cards en ligne avec flex -->
         <div class="kpi-container">
-          <div class="kpi-card received-card">
-            <div class="kpi-icon-wrapper">
-              <div class="kpi-icon received-icon">
-                <i class="fas fa-arrow-down"></i>
-              </div>
-            </div>
-            <div class="kpi-content">
-              <div class="kpi-label">Paiements Reçus</div>
-              <div class="kpi-value">
-                <span v-if="loading" class="loading-dots">...</span>
-                <span v-else>{{ formatAmount(totalReceived) }} <small>TND</small></span>
-              </div>
-              <div class="kpi-trend positive">+12.5% pour cette période</div>
-            </div>
-          </div>
+  <div class="kpi-card received-card">
+    <div class="kpi-icon-wrapper">
+      <div class="kpi-icon received-icon">
+        <i class="fas fa-arrow-down"></i>
+      </div>
+    </div>
+    <div class="kpi-content">
+      <div class="kpi-label">Paiements Reçus</div>
+      <div class="kpi-value">
+        <span v-if="loading" class="loading-dots">...</span>
+        <span v-else>{{ formatAmount(totalReceived) }} <small>TND</small></span>
+      </div>
+      <div class="kpi-trend" :class="getTrendClass('received')">
+        <!-- Add trend content here if needed -->
+      </div>
+    </div>
+  </div>
 
-          <div class="kpi-card emitted-card">
-            <div class="kpi-icon-wrapper">
-              <div class="kpi-icon emitted-icon">
-                <i class="fas fa-arrow-up"></i>
-              </div>
-            </div>
-            <div class="kpi-content">
-              <div class="kpi-label">Paiements Émis</div>
-              <div class="kpi-value">
-                <span v-if="loading" class="loading-dots">...</span>
-                <span v-else>{{ formatAmount(totalEmitted) }} <small>TND</small></span>
-              </div>
-              <div class="kpi-trend negative">-3.2% pour cette période</div>
-            </div>
-          </div>
-        </div>
+  <div class="kpi-card emitted-card">
+    <div class="kpi-icon-wrapper">
+      <div class="kpi-icon emitted-icon">
+        <i class="fas fa-arrow-up"></i>
+      </div>
+    </div>
+    <div class="kpi-content">
+      <div class="kpi-label">Paiements Émis</div>
+      <div class="kpi-value">
+        <span v-if="loading" class="loading-dots">...</span>
+        <span v-else>{{ formatAmount(totalEmitted) }} <small>TND</small></span>
+      </div>
+      <div class="kpi-trend" :class="getTrendClass('emitted')">
+        <!-- Add trend content here if needed -->
+      </div>
+    </div>
+  </div>
+</div>
 
         <!-- Grille des composants avec design amélioré -->
         <div class="dashboard-grid">
@@ -224,7 +228,6 @@
     </IonContent>
   </IonPage>
 </template>
-
 <script setup lang="ts">
 import {
   IonPage, IonHeader, IonToolbar, IonContent, IonButton,
@@ -251,94 +254,233 @@ const {
   totalReceived,
   userCompanies,
   selectedCompany,
+  loadPayments,
   goToCreateCompany,
+  getCurrentDateRange
 } = useDashboardController();
 
 // Variables pour le filtre de période
-const selectedPeriod = ref('thisMonth');
+const selectedPeriod = ref('thisYear');
 const customStartDate = ref('');
 const customEndDate = ref('');
 
-// Options de période
+// Options de période étendues
 const periodOptions = [
+  { value: 'yesterday', label: 'Hier' },
   { value: 'today', label: "Aujourd'hui" },
+  { value: 'tomorrow', label: 'Demain' },
   { value: 'thisWeek', label: 'Cette semaine' },
+  { value: 'last7Days', label: 'Les 7 derniers jours' },
+  { value: 'next7Days', label: 'Les 7 prochains jours' },
   { value: 'thisMonth', label: 'Ce mois' },
   { value: 'lastMonth', label: 'Mois dernier' },
-  { value: 'last3Months', label: '3 derniers mois' },
+  { value: 'last30Days', label: 'Les 30 derniers jours' },
+  { value: 'next30Days', label: 'Les 30 prochains jours' },
+  { value: 'last60Days', label: 'Les 60 derniers jours' },
+  { value: 'next60Days', label: 'Les 60 prochains jours' },
+  { value: 'last90Days', label: 'Les 90 derniers jours' },
+  { value: 'next90Days', label: 'Les 90 prochains jours' },
+  { value: 'thisQuarter', label: 'Ce trimestre' },
+  { value: 'lastQuarter', label: 'Le trimestre dernier' },
+  { value: 'nextQuarter', label: 'Le trimestre prochain' },
   { value: 'thisYear', label: 'Cette année' },
-  { value: 'lastYear', label: 'Année dernière' },
-  { value: 'custom', label: 'Période personnalisée' }
+  { value: 'lastYear', label: "L'année précédente" },
+  { value: 'nextYear', label: "L'année prochaine" },
+  { value: 'custom', label: 'Manuelle' }
 ];
+
+// Fonctions utilitaires pour les calculs de dates
+const getQuarterStartMonth = (quarter: number) => (quarter - 1) * 3;
+const getCurrentQuarter = (date: Date) => Math.floor(date.getMonth() / 3) + 1;
+
+const getTrendClass = (type: 'received' | 'emitted') => {
+  return type === 'received' ? 'positive' : 'negative';
+};
 
 // Computed pour les dates de début et fin
 const startDate = computed(() => {
   const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const date = now.getDate();
   
   switch (selectedPeriod.value) {
+    case 'yesterday':
+      const yesterday = new Date(now);
+      yesterday.setDate(date - 1);
+      return new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    
     case 'today':
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return new Date(year, month, date);
+    
+    case 'tomorrow':
+      const tomorrow = new Date(now);
+      tomorrow.setDate(date + 1);
+      return new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
     
     case 'thisWeek':
       const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Lundi
+      startOfWeek.setDate(date - now.getDay() + 1);
       return startOfWeek;
     
+    case 'last7Days':
+      const last7 = new Date(now);
+      last7.setDate(date - 7);
+      return last7;
+    
+    case 'next7Days':
+      return new Date(year, month, date);
+    
     case 'thisMonth':
-      return new Date(now.getFullYear(), now.getMonth(), 1);
+      return new Date(year, month, 1);
     
     case 'lastMonth':
-      return new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return new Date(year, month - 1, 1);
     
-    case 'last3Months':
-      return new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    case 'last30Days':
+      const last30 = new Date(now);
+      last30.setDate(date - 30);
+      return last30;
+    
+    case 'next30Days':
+      return new Date(year, month, date);
+    
+    case 'last60Days':
+      const last60 = new Date(now);
+      last60.setDate(date - 60);
+      return last60;
+    
+    case 'next60Days':
+      return new Date(year, month, date);
+    
+    case 'last90Days':
+      const last90 = new Date(now);
+      last90.setDate(date - 90);
+      return last90;
+    
+    case 'next90Days':
+      return new Date(year, month, date);
+    
+    case 'thisQuarter':
+      const currentQuarter = getCurrentQuarter(now);
+      const quarterStartMonth = getQuarterStartMonth(currentQuarter);
+      return new Date(year, quarterStartMonth, 1);
+    
+    case 'lastQuarter':
+      const lastQuarter = getCurrentQuarter(now) - 1;
+      const lastQuarterStartMonth = lastQuarter <= 0 ? 9 : getQuarterStartMonth(lastQuarter);
+      const lastQuarterYear = lastQuarter <= 0 ? year - 1 : year;
+      return new Date(lastQuarterYear, lastQuarterStartMonth, 1);
+    
+    case 'nextQuarter':
+      const nextQuarter = getCurrentQuarter(now) + 1;
+      const nextQuarterStartMonth = nextQuarter > 4 ? 0 : getQuarterStartMonth(nextQuarter);
+      const nextQuarterYear = nextQuarter > 4 ? year + 1 : year;
+      return new Date(nextQuarterYear, nextQuarterStartMonth, 1);
     
     case 'thisYear':
-      return new Date(now.getFullYear(), 0, 1);
+      return new Date(year, 0, 1);
     
     case 'lastYear':
-      return new Date(now.getFullYear() - 1, 0, 1);
+      return new Date(year - 1, 0, 1);
+    
+    case 'nextYear':
+      return new Date(year + 1, 0, 1);
     
     case 'custom':
       return customStartDate.value ? new Date(customStartDate.value) : new Date();
     
     default:
-      return new Date(now.getFullYear(), now.getMonth(), 1);
+      return new Date(year, 0, 1);
   }
 });
 
 const endDate = computed(() => {
   const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const date = now.getDate();
   
   switch (selectedPeriod.value) {
+    case 'yesterday':
+      const yesterday = new Date(now);
+      yesterday.setDate(date - 1);
+      return new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59);
+    
     case 'today':
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      return new Date(year, month, date, 23, 59, 59);
+    
+    case 'tomorrow':
+      const tomorrow = new Date(now);
+      tomorrow.setDate(date + 1);
+      return new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 23, 59, 59);
     
     case 'thisWeek':
       const endOfWeek = new Date(now);
-      endOfWeek.setDate(now.getDate() - now.getDay() + 7); // Dimanche
+      endOfWeek.setDate(date - now.getDay() + 7);
       return endOfWeek;
     
+    case 'last7Days':
+    case 'next7Days':
+      const end7 = new Date(now);
+      end7.setDate(date + (selectedPeriod.value === 'last7Days' ? 0 : 7));
+      return end7;
+    
     case 'thisMonth':
-      return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      return new Date(year, month + 1, 0, 23, 59, 59);
     
     case 'lastMonth':
-      return new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      return new Date(year, month, 0, 23, 59, 59);
     
-    case 'last3Months':
-      return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    case 'last30Days':
+    case 'next30Days':
+      const end30 = new Date(now);
+      end30.setDate(date + (selectedPeriod.value === 'last30Days' ? 0 : 30));
+      return end30;
+    
+    case 'last60Days':
+    case 'next60Days':
+      const end60 = new Date(now);
+      end60.setDate(date + (selectedPeriod.value === 'last60Days' ? 0 : 60));
+      return end60;
+    
+    case 'last90Days':
+    case 'next90Days':
+      const end90 = new Date(now);
+      end90.setDate(date + (selectedPeriod.value === 'last90Days' ? 0 : 90));
+      return end90;
+    
+    case 'thisQuarter':
+      const currentQuarter = getCurrentQuarter(now);
+      const quarterEndMonth = getQuarterStartMonth(currentQuarter) + 2;
+      return new Date(year, quarterEndMonth + 1, 0, 23, 59, 59);
+    
+    case 'lastQuarter':
+      const lastQuarter = getCurrentQuarter(now) - 1;
+      const lastQuarterEndMonth = lastQuarter <= 0 ? 11 : getQuarterStartMonth(lastQuarter) + 2;
+      const lastQuarterYear = lastQuarter <= 0 ? year - 1 : year;
+      return new Date(lastQuarterYear, lastQuarterEndMonth + 1, 0, 23, 59, 59);
+    
+    case 'nextQuarter':
+      const nextQuarter = getCurrentQuarter(now) + 1;
+      const nextQuarterEndMonth = nextQuarter > 4 ? 2 : getQuarterStartMonth(nextQuarter) + 2;
+      const nextQuarterYear = nextQuarter > 4 ? year + 1 : year;
+      return new Date(nextQuarterYear, nextQuarterEndMonth + 1, 0, 23, 59, 59);
     
     case 'thisYear':
-      return new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+      return new Date(year, 11, 31, 23, 59, 59);
     
     case 'lastYear':
-      return new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+      return new Date(year - 1, 11, 31, 23, 59, 59);
+    
+    case 'nextYear':
+      return new Date(year + 1, 11, 31, 23, 59, 59);
     
     case 'custom':
       return customEndDate.value ? new Date(customEndDate.value + 'T23:59:59') : new Date();
     
     default:
-      return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      return new Date(year, 11, 31, 23, 59, 59);
   }
 });
 
@@ -346,7 +488,6 @@ const endDate = computed(() => {
 const selectPeriod = (period: string) => {
   selectedPeriod.value = period;
   
-  // Si ce n'est pas une période personnalisée, réinitialiser les dates custom
   if (period !== 'custom') {
     customStartDate.value = '';
     customEndDate.value = '';
@@ -354,9 +495,7 @@ const selectPeriod = (period: string) => {
 };
 
 const onCustomDateChange = () => {
-  // Déclencher le rechargement des données quand les dates personnalisées changent
   if (customStartDate.value && customEndDate.value) {
-    // Logique pour recharger les données avec les nouvelles dates
     console.log('Nouvelles dates:', customStartDate.value, 'au', customEndDate.value);
   }
 };
@@ -369,26 +508,20 @@ const getSelectedPeriodText = () => {
   }
   
   const option = periodOptions.find(p => p.value === selectedPeriod.value);
-  return option ? option.label : 'Ce mois';
+  return option ? option.label : 'Cette année';
 };
 
 // Watcher pour surveiller les changements de période
 watch([selectedPeriod, customStartDate, customEndDate], () => {
-  // Ici vous pouvez ajouter la logique pour recharger les données
-  // basées sur la nouvelle période sélectionnée
   console.log('Période changée:', selectedPeriod.value);
   console.log('Dates:', startDate.value, 'à', endDate.value);
-  
-  // Exemple: recharger les données du dashboard
-  // await loadDashboardData(startDate.value, endDate.value);
 });
 
 onMounted(async () => {
   await loadUserProfile();
-  // Initialiser les dates personnalisées si nécessaire
   const now = new Date();
   if (!customStartDate.value) {
-    customStartDate.value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    customStartDate.value = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
   }
   if (!customEndDate.value) {
     customEndDate.value = now.toISOString().split('T')[0];
@@ -397,6 +530,9 @@ onMounted(async () => {
 
 // Fonction pour formater les montants
 const formatAmount = (amount: number) => {
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    return '0.000';
+  }
   return amount.toFixed(3).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 };
 
@@ -413,7 +549,7 @@ const getCurrentDate = () => {
 </script>
 
 <style scoped>
-/* Styles existants... */
+/* Tous les styles CSS existants restent identiques */
 .yellow-toolbar {
   --background: rgba(255, 214, 51, 0.8);
   --border-color: transparent;
@@ -488,7 +624,6 @@ const getCurrentDate = () => {
   font-weight: 500;
 }
 
-/* NOUVEAUX STYLES POUR LE FILTRE DE PÉRIODE */
 .period-filter-container {
   background: white;
   border-radius: 20px;
@@ -619,7 +754,6 @@ const getCurrentDate = () => {
   font-weight: 600;
 }
 
-/* Styles KPI existants avec petites modifications */
 .kpi-container {
   display: flex;
   justify-content: space-between;
@@ -683,6 +817,7 @@ const getCurrentDate = () => {
 .kpi-content {
   text-align: center;
 }
+
 
 .kpi-label {
   font-size: 0.85rem;

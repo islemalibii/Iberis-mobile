@@ -52,7 +52,7 @@
   }
   
   const props = withDefaults(defineProps<Props>(), {
-    period: 'thisMonth',
+    period: 'thisYear',
     startDate: () => new Date(),
     endDate: () => new Date()
   });
